@@ -7,13 +7,13 @@ variable (a b c d e f : ℝ)
 #check (le_refl : ∀ a : ℝ, a ≤ a)
 #check (le_trans : a ≤ b → b ≤ c → a ≤ c)
 
-variable (h₀ : a ≤ b) (h₁ : b ≤ c)
+-- variable (h₀ : a ≤ b) (h₁ : b ≤ c)
 
 #check (le_refl : ∀ a : Real, a ≤ a)
 #check (le_refl a : a ≤ a)
 #check (le_trans : a ≤ b → b ≤ c → a ≤ c)
-#check (le_trans h₀ : b ≤ c → a ≤ c)
-#check (le_trans h₀ h₁ : a ≤ c)
+-- #check (le_trans h₀ : b ≤ c → a ≤ c)
+-- #check (le_trans h₀ h₁ : a ≤ c)
 
 -- The `apply` tactic
 
@@ -59,6 +59,7 @@ example (h : 1 ≤ a) (h₀ : b ≤ c) : 2 + a + exp b ≤ 3 * a + exp c := by
 
 #check (exp_le_exp : exp a ≤ exp b ↔ a ≤ b)
 #check (exp_lt_exp : exp a < exp b ↔ a < b)
+
 #check (log_le_log : 0 < a → a ≤ b → log a ≤ log b)
 #check (log_lt_log : 0 < a → a < b → log a < log b)
 #check (add_le_add : a ≤ b → c ≤ d → a + c ≤ b + d)
@@ -115,3 +116,39 @@ example (h : a ≤ b) : c - exp b ≤ c - exp a := by
   apply tsub_le_tsub
   · apply le_refl
   apply exp_le_exp.mpr h
+
+example : 2*a*b ≤ a^2 + b^2 := by
+  have h : 0 ≤ a^2 - 2*a*b + b^2 := by
+    calc
+      a^2 - 2*a*b + b^2 = (a - b)^2 := by
+        ring
+      (a - b)^2 ≥ 0 := by
+        apply pow_two_nonneg
+
+  calc
+    2*a*b = 2*a*b + 0 := by
+      ring
+    2*a*b + 0 ≤ 2*a*b + (a^2 - 2*a*b + b^2) :=
+      add_le_add (le_refl _) h
+    2*a*b + (a^2 - 2*a*b + b^2) = a^2 + b^2 := by
+      ring
+
+example : 2*a*b ≤ a^2 + b^2 := by
+  have h : 0 ≤ a^2 - 2*a*b + b^2 := by
+    calc
+      a^2 - 2*a*b + b^2 = (a - b)^2 := by ring
+      (a - b)^2 ≥ 0 := by apply pow_two_nonneg
+  linarith
+
+#check two_mul_le_add_sq -- 2 * a * b ≤ a ^ 2 + b ^ 2
+
+-- https://github.com/avigad/mathematics_in_lean_source/issues/138#issuecomment-3558928980
+example (a b : ℝ) : |a * b| ≤ (a^2 + b^2) / 2 := by
+  have h := sq_nonneg (a - b)
+  rw [sub_sq] at h
+  apply abs_le'.mpr
+  constructor
+  · sorry -- sorry I'm completely on tilt!
+  sorry
+
+#check abs_le'.mpr
