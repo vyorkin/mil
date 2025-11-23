@@ -86,8 +86,26 @@ example : min (min a b) c = min a (min b c) := by
 #check add_neg_cancel_right
 
 theorem aux : min a b + c ≤ min (a + c) (b + c) := by
-
-  sorry
+  apply le_min
+  · apply add_le_add_right
+    apply min_le_left
+  apply add_le_add_right
+  apply min_le_right
 
 example : min a b + c = min (a + c) (b + c) := by
-  sorry
+  apply le_antisymm
+  · apply aux
+  rw [← add_neg_cancel_right (min (a + c) (b + c)) c]
+  rw [add_assoc, ← add_comm (-c), ← add_assoc]
+  apply add_le_add_right
+  apply le_min
+  · nth_rw 2 [← add_neg_cancel_right a (-c)]
+    rw [neg_neg]
+    rw [add_assoc, add_comm (-c), ← add_assoc]
+    apply add_le_add_right
+    apply min_le_left
+  nth_rw 2 [← add_neg_cancel_right b (-c)]
+  rw [neg_neg]
+  rw [add_assoc, add_comm (-c), ← add_assoc]
+  apply add_le_add_right
+  apply min_le_right
