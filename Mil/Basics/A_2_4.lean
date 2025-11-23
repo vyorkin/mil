@@ -2,7 +2,7 @@
 
 import Mathlib
 
-variable (a b c d e f : ℝ)
+variable (a b c d e f x y w z : ℝ)
 
 #check (lt_min_iff : a < min b c ↔ a < b ∧ a < c)
 #check (min_lt_iff : min a b < c ↔ a < c ∨ b < c)
@@ -109,3 +109,45 @@ example : min a b + c = min (a + c) (b + c) := by
   rw [add_assoc, add_comm (-c), ← add_assoc]
   apply add_le_add_right
   apply min_le_right
+
+-- https://github.com/avigad/mathematics_in_lean_source/issues/348
+-- #check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
+
+example : |a| - |b| ≤ |a - b| :=
+  sorry
+
+-- Divisibility
+
+example (h₀ : x ∣ y) (h₁ : y ∣ z) : x ∣ z :=
+  dvd_trans h₀ h₁
+
+example : x ∣ y * x * z := by
+  apply dvd_mul_of_dvd_left
+  apply dvd_mul_left
+  -- exact dvd_mul_left x y
+
+example : x ∣ x ^ 2 := by
+  apply dvd_mul_left
+
+example (h : x ∣ w) : x ∣ y * (x * z) + x ^ 2 + w ^ 2 := by
+  apply dvd_add
+  · apply dvd_add
+    · rw [← mul_assoc]
+      apply dvd_mul_of_dvd_left
+      apply dvd_mul_left
+    apply dvd_mul_left
+  apply dvd_pow h
+  linarith
+
+variable (m n : ℕ)
+
+#check (Nat.gcd_zero_right n : Nat.gcd n 0 = n)
+#check (Nat.gcd_zero_left n : Nat.gcd 0 n = n)
+#check (Nat.lcm_zero_right n : Nat.lcm n 0 = 0)
+#check (Nat.lcm_zero_left n : Nat.lcm 0 n = 0)
+
+example : Nat.gcd m n = Nat.gcd n m := by
+  apply dvd_antisymm
+  repeat
+    repeat rw [← gcd_eq_nat_gcd]
+    rw [gcd_comm]
