@@ -126,13 +126,47 @@ variable {G : Type*} [Group G]
 #check (one_mul : ∀ a : G, 1 * a = a)
 #check (inv_mul_cancel : ∀ a : G, a⁻¹ * a = 1)
 
+lemma aux₁ (a b : G) : a = (b⁻¹ * b) * a := by
+  nth_rw 1 [← one_mul a]
+  rw [← inv_mul_cancel]
+
+lemma aux₂ (a : G) : 1 = a⁻¹ * (1 * a) := by
+  nth_rw 1 [← inv_mul_cancel a]
+  nth_rw 2 [← one_mul a]
+
+theorem inv_inv_eq (a : G) : a⁻¹⁻¹ = a := by
+  nth_rw 2 [← one_mul a]
+  rw [← inv_mul_cancel a⁻¹]
+  rw [mul_assoc]
+  rw [inv_mul_cancel]
+  rw [mul_one]
+
 theorem mul_inv_cancel (a : G) : a * a⁻¹ = 1 := by
-  sorry
+  rw [← inv_mul_cancel a⁻¹]
+  rw [inv_inv_eq]
 
 theorem mul_one (a : G) : a * 1 = a := by
-  sorry
+  rw [aux₁ a a⁻¹]
+  rw [← inv_mul_cancel a]
+  rw [← mul_assoc]
+  nth_rw 1 [mul_assoc a⁻¹⁻¹ a⁻¹]
+  nth_rw 1 [inv_mul_cancel]
+  nth_rw 1 [mul_assoc a⁻¹⁻¹ 1]
+  rw [one_mul]
+
+theorem mul_inv_comm (a : G) : a * a⁻¹ = a⁻¹ * a := by
+  rw [mul_inv_cancel]
+  rw [inv_mul_cancel]
+
+-- mul_comm?
 
 theorem mul_inv_rev (a b : G) : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
+  -- nth_rw 2 [aux₁ a b]
+  -- nth_rw 2 [aux₁ b a]
+  -- nth_rw 1 [← one_mul (a * b)⁻¹]
+  -- nth_rw 1 [← inv_mul_cancel b]
+  -- nth_rw 4 [aux₁ b b]
+  -- nth_rw 2 [mul_assoc]
   sorry
 
 end MyRing
