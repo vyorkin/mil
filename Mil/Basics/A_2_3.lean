@@ -55,7 +55,7 @@ example (h₀ : 2 * a ≤ 3 * b) (h₁ : 1 ≤ a) (h₂ : d = 2) : d + a ≤ 5 *
 open Real
 
 example (h : 1 ≤ a) (h₀ : b ≤ c) : 2 + a + exp b ≤ 3 * a + exp c := by
-  linarith [exp_le_exp.mpr h₁]
+  linarith [exp_le_exp.mpr h₀]
 
 #check (exp_le_exp : exp a ≤ exp b ↔ a ≤ b)
 #check (exp_lt_exp : exp a < exp b ↔ a < b)

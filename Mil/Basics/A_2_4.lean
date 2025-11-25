@@ -68,7 +68,8 @@ example : max a b = max b a := by
 example : min (min a b) c = min a (min b c) := by
   apply le_antisymm
   · apply le_min
-    · apply min_le_iff.mpr
+    · change min (min a b) c ≤ a
+      apply min_le_iff.mpr
       · left
         apply min_le_left
     apply min_le_min
@@ -82,6 +83,8 @@ example : min (min a b) c = min a (min b c) := by
       apply min_le_left
   apply min_le_of_right_le
   apply min_le_right
+
+-- TODO: prove associativity of max
 
 #check add_neg_cancel_right
 
