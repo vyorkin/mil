@@ -112,5 +112,23 @@ example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
 
 -- TODO: Rewrite using calc & trans tactics
 
+#check inf_comm
+#check inf_assoc
+#check sup_comm
+#check sup_assoc
+
+theorem absorb1 : x ⊓ (x ⊔ y) = x := by
+  apply le_antisymm
+  · apply inf_le_left
+  apply le_inf
+  · apply le_refl
+  apply le_sup_left
+
+theorem absorb2 : x ⊔ x ⊓ y = x := by
+  apply le_antisymm
+  · apply sup_le
+    · apply le_refl
+    apply inf_le_left
+  apply le_sup_left
 
 end
