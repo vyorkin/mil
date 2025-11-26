@@ -131,4 +131,47 @@ theorem absorb2 : x ⊔ x ⊓ y = x := by
     apply inf_le_left
   apply le_sup_left
 
+#check inf_sup_self
+#check sup_inf_self
+
+end
+
+section
+variable {α : Type*} [DistribLattice α]
+variable (x y z : α)
+
+-- inf_sup_right
+-- (x ⊔ y) ⊓ z
+-- x *
+-- y
+-- z   *
+--
+-- ((x ⊓ z) ⊔ y) ⊓ z
+-- x
+-- y   *
+-- z *   *
+
+#check (inf_sup_left x y z : x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z)
+#check (inf_sup_right x y z : (x ⊔ y) ⊓ z = x ⊓ z ⊔ y ⊓ z)
+
+#check (sup_inf_left x y z : x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z))
+#check (sup_inf_right x y z : x ⊓ y ⊔ z = (x ⊔ z) ⊓ (y ⊔ z))
+
+-- distributive lattice
+-- 1) x ⊓ (y ⊔ z) = (x ⊓ y) ⊔ (x ⊓ z)
+-- 2) x ⊔ (y ⊓ z) = (x ⊔ y) ⊓ (x ⊔ z)
+
+end
+
+section
+variable {α : Type*} [Lattice α]
+variable (a b c : α)
+
+example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z) :
+  a ⊔ b ⊓ c = (a ⊔ b) ⊓ (a ⊔ c) := by
+  sorry
+
+example (h : ∀ x y z : α, x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z)) :
+  a ⊓ (b ⊔ c) = a ⊓ b ⊔ a ⊓ c := by
+  sorry
 end
