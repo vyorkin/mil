@@ -119,6 +119,11 @@ example : min a b + c = min (a + c) (b + c) := by
 example : |a| - |b| ≤ |a - b| :=
   sorry
 
+theorem whatever : |a| - |b| ≤ |a - b| := by
+  rw [tsub_le_iff_right]
+  -- apply?
+  sorry
+
 -- Divisibility
 
 example (h₀ : x ∣ y) (h₁ : y ∣ z) : x ∣ z :=

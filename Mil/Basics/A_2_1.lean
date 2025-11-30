@@ -159,3 +159,8 @@ example (hyp : c = d * a + b) (hyp' : b = a * d) : c = 2 * a * d := by
   rw [hyp, hyp']
   ring
 end
+
+example (a b c : ℕ) (h : a + b = c) :
+  (a + b) * (a + b) = a * c + b * c := by
+  nth_rw 2 [h]
+  rw [add_mul]

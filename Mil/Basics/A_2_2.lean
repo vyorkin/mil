@@ -2,14 +2,36 @@
 
 import Mathlib
 
-example (a b c : ℕ) (h : a + b = c) :
-  (a + b) * (a + b) = a * c + b * c := by
-  nth_rw 2 [h]
-  rw [add_mul]
+section
+-- Кольцо это мн-во R с
+-- Операциями: +, ×
+-- Константами: 0, 1
+-- Операцией: x → -x такой
+-- ℝ абелева группа по сложению: ∀ a b c
+--    a + b = b + a - коммутативность
+--    (a + b) + c = a + (b + c) - ассоциативность
+--    ∃ 0 ∈ R, a = a + 0 - сущ. нейтральный элемент
+--    ∃ (-a) ∈ R, a + (-a) = 0 - сущ. обратный элемент для сложения
+-- Умножение ассоциативно и дистрибутивно по сложению:
+--    (a × b) × c = a × (b × c)
+--    a × (b + c) = a × b + a × c
+-- Сущ. нейтральный элемент для умножения:
+--    ∃ 1 ∈ R, a = a × 1
 
--- CommRing
+variable (R : Type*) [Ring R]
+
+#check (add_comm : ∀ a b : R, a + b = b + a)
+#check (add_assoc : ∀ a b c : R, a + b + c = a + (b + c))
+#check (add_zero : ∀ a : R, a + 0 = a)
+#check (neg_add_cancel : ∀ a : R, -a + a = 0)
+#check (mul_assoc : ∀ a b c : R, a * b * c = a * (b * c))
+#check (mul_add : ∀ a b c : R,  a * (b + c) = a * b + a * c)
+#check (mul_one : ∀ a : R, a * 1 = a)
+end
 
 section
+-- CommRing
+
 variable (R : Type*) [CommRing R]
 variable (a b c d : R)
 
