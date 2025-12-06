@@ -18,23 +18,43 @@ section
 -- Сущ. нейтральный элемент для умножения:
 --    ∃ 1 ∈ R, a = a × 1
 
+-- Заметь, что кольцо не требует коммутативности умножения.
+-- Потому что в общем коммутативность умножения не всегда выполняется.
+-- Например, она не выполняется для матриц n×n,
+-- т.е. m₁(n×n) * m₂(n×n) ≠ m₂(n×n) * m₁(n×n)
+
 variable (R : Type*) [Ring R]
+
+-- Квадратные скобки делают наш R инстансом тайпкласса кольца и
+-- мы получаем возможность работать с R как с кольцом.
 
 #check (add_comm : ∀ a b : R, a + b = b + a)
 #check (add_assoc : ∀ a b c : R, a + b + c = a + (b + c))
 #check (add_zero : ∀ a : R, a + 0 = a)
 #check (neg_add_cancel : ∀ a : R, -a + a = 0)
 #check (mul_assoc : ∀ a b c : R, a * b * c = a * (b * c))
-#check (mul_add : ∀ a b c : R,  a * (b + c) = a * b + a * c)
+
+-- Т.к. умножение не коммутативно, то нам нужны 2 леммы
+-- дистрибутивности - для умножения слева и справа, и две леммы о
+-- нейтральных элементах для умножения тоже слева и справа.
+#check (mul_add : ∀ a b c : R, a * (b + c) = a * b + a * c)
+#check (add_mul : ∀ a b c : R, (a + b) * c = a * c + b * c)
 #check (mul_one : ∀ a : R, a * 1 = a)
+#check (one_mul : ∀ a : R, 1 * a = a)
+
+-- Заметь, что ничего нет про умножение на ноль. Это потому,
+-- что леммы a * 0 и 0 * a выводятся из этих аксиом кольца.
 end
 
 section
 -- CommRing
+-- Так вот, про коммутативность умножения.
+-- Мы можем сделать наш R _коммутативным_ кольцом.
 
 variable (R : Type*) [CommRing R]
 variable (a b c d : R)
 
+-- Без коммутативности это не верно.
 example : c * b * a = b * (a * c) := by ring
 example : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b := by ring
 example : (a + b) * (a - b) = a ^ 2 - b ^ 2 := by ring
@@ -42,10 +62,13 @@ example (hyp : c = d * a + b) (hyp' : b = a * d) : c = 2 * a * d := by
   rw [hyp, hyp']
   ring
 
+-- Для коротких доказательств принято писать док-во на той же строке,
+-- Типа того: ... := by ring / by linarith
+
 example : (a + b) * (a - b) = a ^ 2 - b ^ 2 := by
   rw [pow_two, pow_two]
   rw [add_mul, mul_sub, mul_sub]
-  rw [mul_comm b a]
+  rw [mul_comm b a] -- Используем коммутативность умножения
   rw [add_sub]
   rw [add_comm]
   rw [add_sub]
@@ -55,9 +78,18 @@ example : (a + b) * (a - b) = a ^ 2 - b ^ 2 := by
   rw [add_zero]
 end
 
+-- Будем учиться использовать аксиомы колец.
+-- Начнём с базовых/начальных аксиом и на их основе докажем
+-- новые теоремы про кольца (они все есть в Mathlib,
+-- мы просто заново определим свои в учебных целях).
 namespace MyRing
 
+-- Делаем R неявным аргументом.
 variable {R : Type*} [Ring R]
+
+-- Для кольца нужна лемма о нейтральном элементе и
+-- обратном элементе сложения только с одной стороны,
+-- тк для другой стороны оба утверждения следуют из аксиом кольца.
 
 theorem add_zero (a : R) : a + 0 = a := by
   rw [add_comm, zero_add]
@@ -74,13 +106,13 @@ theorem neg_add_cancel_left (a b : R) : -a + (a + b) = b := by
 theorem add_neg_cancel_right (a b : R) : a + b + -b = a := by
   rw [add_assoc, add_neg_cancel, add_zero]
 
-theorem add_left_cancel₁ {a b c : R} (h : a + b = a + c) : b = c := by
-  rw [← add_neg_cancel_left a b, add_comm (-a), ← add_assoc]
+theorem add_left_cancel {a b c : R} (h : a + b = a + c) : b = c := by
+  rw [← add_neg_cancel_right b a, add_comm b a]
   rw [← add_neg_cancel_right c a, add_comm c a]
   rw [h]
 
-theorem add_left_cancel₂ {a b c : R} (h : a + b = a + c) : b = c := by
-  rw [← add_neg_cancel_right b a, add_comm b a]
+theorem add_left_cancel' {a b c : R} (h : a + b = a + c) : b = c := by
+  rw [← add_neg_cancel_left a b, add_comm (-a), ← add_assoc]
   rw [← add_neg_cancel_right c a, add_comm c a]
   rw [h]
 
@@ -92,7 +124,7 @@ theorem add_right_cancel {a b c : R} (h : a + b = c + b) : a = c := by
 theorem mul_zero (a : R) : a * 0 = 0 := by
   have h : a * 0 + a * 0 = a * 0 + 0 := by
     rw [← mul_add, add_zero, add_zero]
-  rw [add_left_cancel₂ h]
+  rw [add_left_cancel h]
 
 theorem zero_mul (a : R) : 0 * a = 0 := by
   have h : 0 * a + 0 * a = 0 + 0 * a := by

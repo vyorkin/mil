@@ -96,7 +96,6 @@ example (a b : ℝ) : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b := by
       rw [← add_assoc, add_assoc (a * a)]
     _ = a * a + 2 * (a * b) + b * b := by
       rw [mul_comm b a, ← two_mul]
-
 section
 
 variable (a b c d : ℝ)
@@ -106,6 +105,7 @@ example : (a + b) * (c + d) = a * c + a * d + b * c + b * d := by
   rw [add_assoc, ← add_assoc (b * c)]
   rw [add_comm (b * c) (a * d)]
   rw [← add_assoc, ← add_assoc]
+
 
 example : (a + b) * (c + d) = a * c + a * d + b * c + b * d := by
   calc
