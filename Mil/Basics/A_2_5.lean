@@ -189,7 +189,7 @@ example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z)
       apply sup_le
       · exact le_sup_left
       · show b ⊓ c ≤ a ⊔ b
-        apply inf_right_le_sup_left
+        exact inf_right_le_sup_left
     · apply sup_le
       · exact le_sup_left
       · show b ⊓ c ≤ a ⊔ c

@@ -30,7 +30,7 @@ example (a b c : ℝ) : a * (b * c) = b * (c * a) := by
 
 example (a b c : ℝ) : a * (b * c) = b * (a * c) := by
   rw [mul_comm a]
-  rw [mul_assoc b c]
+  rw [mul_assoc b]
   rw [mul_comm a]
 
 -- Using facts from local context
@@ -88,7 +88,7 @@ example (a b : ℝ) : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b := by
 
 -- Calc
 
-example (a b : ℝ) : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b := by
+example (a b : ℝ) : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b :=
   calc
     (a + b) * (a + b) = a * a + b * a + (a * b + b * b) := by
       rw [mul_add, add_mul, add_mul]
@@ -96,6 +96,7 @@ example (a b : ℝ) : (a + b) * (a + b) = a * a + 2 * (a * b) + b * b := by
       rw [← add_assoc, add_assoc (a * a)]
     _ = a * a + 2 * (a * b) + b * b := by
       rw [mul_comm b a, ← two_mul]
+
 section
 
 variable (a b c d : ℝ)
@@ -107,7 +108,7 @@ example : (a + b) * (c + d) = a * c + a * d + b * c + b * d := by
   rw [← add_assoc, ← add_assoc]
 
 
-example : (a + b) * (c + d) = a * c + a * d + b * c + b * d := by
+example : (a + b) * (c + d) = a * c + a * d + b * c + b * d :=
   calc
     (a + b) * (c + d) = a * c + b * c + (a * d + b * d) := by
       rw [mul_add, add_mul, add_mul]
@@ -146,6 +147,11 @@ end
 section
 variable (a b c : ℝ)
 
+-- Тактика ring позволяет доказывать равенства для любого
+-- коммутативного кольца. Для этого требуется, чтобы эти
+-- равенства напрямую следовали только из аксиом кольца, без
+-- необходимости дополнительно использовать локальные гипозы.
+
 example : c * b * a = b * (a * c) := by
   ring
 
@@ -156,7 +162,10 @@ example : (a + b) * (a - b) = a ^ 2 - b ^ 2 := by
   ring
 
 example (hyp : c = d * a + b) (hyp' : b = a * d) : c = 2 * a * d := by
+  -- Сначала самостоятельно используем наши локальные,
+  -- тк ring их не умеет использовать.
   rw [hyp, hyp']
+  -- Только теперь можно применить ring.
   ring
 end
 
