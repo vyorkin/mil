@@ -2,20 +2,40 @@
 
 import Mathlib
 
-variable (a b c d e f : ℝ)
+namespace My1
+variable (a b c : ℝ)
 
+-- Рассмотрим следующие 2 леммы:
+
+-- Вот для этой существует две версии - с явными и неявными аргументами.
 #check (le_refl : ∀ a : ℝ, a ≤ a)
+
+-- Для этой только с неявными.
 #check (le_trans : a ≤ b → b ≤ c → a ≤ c)
 
--- variable (h₀ : a ≤ b) (h₁ : b ≤ c)
+end My1
 
+namespace My2
+-- Например, если мы определим вот такие переменные
+variable (a b c : ℝ)
+-- И гипотезы:
+variable (h₀ : a ≤ b) (h₁ : b ≤ c)
+-- То сможем их использовать вот так:
 #check (le_refl : ∀ a : Real, a ≤ a)
 #check (le_refl a : a ≤ a)
-#check (le_trans : a ≤ b → b ≤ c → a ≤ c)
--- #check (le_trans h₀ : b ≤ c → a ≤ c)
--- #check (le_trans h₀ h₁ : a ≤ c)
+-- И вот так:
+#check (le_trans h₀ h₁ : a ≤ c)
+-- Можно частично применить:
+#check (le_trans h₀ : b ≤ c → a ≤ c)
+end My2
 
--- The `apply` tactic
+variable (a b c d e f g : ℝ)
+
+-- The `apply` tactic tries to match the conclusion with the current goal,
+-- and leaves the hypotheses, if any, as new goals.
+
+-- Ну а если прям в точности мэтч, то
+-- можно писать `exact theorem` вместо `apply theorem`.
 
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
   apply le_trans
@@ -26,11 +46,11 @@ example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
   apply le_trans h₀
   apply h₁
 
--- No tactic
+-- Даже в тактик-мод не обязательно это делать. Можно прям вот так:
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z :=
   le_trans h₀ h₁
 
--- Tactic vs No tactic
+-- Вот тоже самое:
 example (x : ℝ) : x ≤ x := by apply le_refl
 example (x : ℝ) : x ≤ x := le_refl x
 
@@ -44,18 +64,28 @@ example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e 
   have h₄ : b < d := lt_of_lt_of_le h₁ h₂
   exact lt_trans h₄ h₃
 
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
-  linarith
-
--- `linarith` can handle linear arithmetic
-
-example (h₀ : 2 * a ≤ 3 * b) (h₁ : 1 ≤ a) (h₂ : d = 2) : d + a ≤ 5 * b := by
-  linarith
+namespace My3
 
 open Real
 
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
+  linarith
+-- ^ Тактика linarith справляется с линейной арифметикой.
+example (h₀ : 2 * a ≤ 3 * b) (h₁ : 1 ≤ a) (h₂ : d = 2) : d + a ≤ 5 * b := by
+  linarith
+
+-- А ещё ей можно передавать список неравенств в
+-- качестве аргументов и онa будет их использовать.
 example (h : 1 ≤ a) (h₀ : b ≤ c) : 2 + a + exp b ≤ 3 * a + exp c := by
   linarith [exp_le_exp.mpr h₀]
+  --         ^ exp b ≤ exp c
+
+end My3
+
+open Real
+
+-- Вот некоторые полезные теоремы из Mathlib, которые могут быть
+-- полезны для доказательства неравенств на вещественных числах.
 
 #check (exp_le_exp : exp a ≤ exp b ↔ a ≤ b)
 #check (exp_lt_exp : exp a < exp b ↔ a < b)
@@ -75,26 +105,36 @@ example (h : 1 ≤ a) (h₀ : b ≤ c) : 2 + a + exp b ≤ 3 * a + exp c := by
 #check (exp_pos : ∀ a, 0 < exp a)
 #check add_le_add_left
 
+
+-- Используя теоремы с iff можно переписывать (rw) так же,
+-- как и с использованием теорем о равенствах. Например:
 example (h : a ≤ b) : exp a ≤ exp b := by
   rw [exp_le_exp]
   exact h
+
+-- .1 или .mp  - modus ponens
+-- .2 или .mpr - modus ponens reversed
 
 example (h₀ : a ≤ b) (h₁ : c < d) : a + exp c + e < b + exp d + e := by
   apply add_lt_add_of_lt_of_le
   · apply add_lt_add_of_le_of_lt h₀
     apply exp_lt_exp.mpr h₁
-  apply le_refl
+  · apply le_refl
+
+namespace My4
 
 example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) := by
-  apply add_le_add
+  apply add_le_add -- (h₁ : a ≤ b) (h₂ : c ≤ d) : a + c ≤ b + d
   · apply le_refl
-  rw [exp_le_exp]
-  apply add_le_add
-  · apply le_refl
-  exact h₀
+  · rw [exp_le_exp]
+    apply add_le_add
+    · apply le_refl
+    · exact h₀
 
-example : (0 : ℝ) < 1 := by
-  norm_num
+-- Тактика norm_num вычисляет числовые выражения в целях и гипотезах и
+-- сводит задачу к проверке равенства/неравенства двух нормализованных чисел.
+
+example : (0 : ℝ) < 1 := by norm_num
 
 example (h : a ≤ b) : log (1 + exp a) ≤ log (1 + exp b) := by
   have h₀ : 0 < 1 + exp a := by
@@ -107,6 +147,8 @@ example (h : a ≤ b) : log (1 + exp a) ≤ log (1 + exp b) := by
   · apply le_refl
   rw [exp_le_exp]
   exact h
+
+end My4
 
 example : 0 ≤ a ^ 2 := by
   -- apply?

@@ -109,19 +109,14 @@ theorem neg_add_cancel_left (a b : R) : -a + (a + b) = b := by
 theorem add_neg_cancel_right (a b : R) : a + b + -b = a := by
   rw [add_assoc, add_neg_cancel, add_zero]
 
-theorem add_left_cancel {a b c : R} (h : a + b = a + c) : b = c := by
-  rw [← add_neg_cancel_right b a, add_comm b a]
-  rw [← add_neg_cancel_right c a, add_comm c a]
-  rw [h]
-
-theorem add_left_cancel' {a b c : R} (h : a + b = a + c) : b = c := by
-  rw [← add_neg_cancel_left a b, add_comm (-a), ← add_assoc]
-  rw [← add_neg_cancel_right c a, add_comm c a]
-  rw [h]
-
 theorem add_right_cancel {a b c : R} (h : a + b = c + b) : a = c := by
   rw [← add_neg_cancel_right a b]
   rw [← add_neg_cancel_right c b]
+  rw [h]
+
+theorem add_left_cancel {a b c : R} (h : a + b = a + c) : b = c := by
+  rw [← add_neg_cancel_right b a, add_comm b a]
+  rw [← add_neg_cancel_right c a, add_comm c a]
   rw [h]
 
 theorem mul_zero (a : R) : a * 0 = 0 := by
@@ -145,23 +140,44 @@ theorem eq_neg_of_add_eq_zero {a b : R} (h : a + b = 0) : a = -b := by
   rw [← neg_add_cancel_left b a, add_comm b a]
   rw [h, add_zero]
 
+-- Для числовых литералов lean 4 автоматически пытается синтезировать
+-- инстанс вида: OfNat.ofNat -0 : α. И по умолчанию α = Nat, поэтому здесь нам
+-- требуется явно указать R, чтобы показать что у нас за инстанс для чисел.
 theorem neg_zero : (-0 : R) = 0 := by
-  apply neg_eq_of_add_eq_zero
+  apply neg_eq_of_add_eq_zero -- (h : a + b = 0) : -a = b
+  -- -0 = 0 => 0 + 0 = 0
   rw [add_zero]
 
 theorem neg_neg (a : R) : - -a = a := by
-  apply neg_eq_of_add_eq_zero
+  apply neg_eq_of_add_eq_zero -- (h : a + b = 0) : -a = b
+  -- - -a = a => -a + a = 0
+  -- При обратном рассуждении neg_eq_of_add_eq_zero
+  -- снимает один `-` с `- - a`.
   rw [add_comm, add_neg_cancel]
 
+-- In Lean, subtraction in a ring is provably equal
+-- to addition of the additive inverse.
 example (a b : R) : a - b = a + -b :=
-  sub_eq_add_neg a b
+  sub_eq_add_neg a b -- a - b = a + -b
 
+-- Тактика rfl (reflexivity) фактически разворачивает определение сложения,
+-- редуцирует пока редуцируется и проверяет равны ли обе стороны равенства.
+-- Это называется равенство по определению.
+-- И есть ещё аналогичный пруф-терм, который называется так же - rfl.
+-- Когда линь его видит, он делает ровно тоже самое, что и
+-- при использовании тактики rfl. Поэтому ты можешь использовать
+-- её для доказательства равенств вида:
 example (a b : ℝ) : a - b = a + -b := rfl
 example (a b : ℝ) : a - b = a + -b := by rfl
 
 theorem self_sub (a : R) : a - a = 0 := by
   rw [← add_neg_cancel a]
   rw [sub_eq_add_neg]
+
+theorem self_sub_real (a : ℝ) : a - a = 0 := by
+  -- ℝ это просто конкретный инстанс кольца,
+  -- поэтому можно доказать вот так:
+  exact self_sub a
 
 theorem one_add_one_eq_two : 1 + 1 = (2 : R) := by
   norm_num
@@ -171,26 +187,42 @@ theorem two_mul (a : R) : 2 * a = a + a := by
   rw [add_mul]
   rw [one_mul]
 
+-- Нам не всегда требуется "сила кольца".
+-- Иногда достаточно, чтобы тип был группой.
+
+-- Удобно пользоваться аддитивной нотацией, когда группая операция коммутативна.
+-- Когда коммутативноси нет, то удобнее пользоваться мультипликативной ноатцией.
+-- Поэтому в Lean есть и AddGroup и Group
+-- (а так же их абелевы варианты AddCommGroup, CommGroup)
+
+-- Аддитивная группа.
 variable (A : Type*) [AddGroup A]
 
+-- Список аксиом аддитивной группы:
 #check (add_assoc : ∀ a b c : A, a + b + c = a + (b + c))
 #check (zero_add : ∀ a : A, 0 + a = a)
 #check (neg_add_cancel : ∀ a : A, -a + a = 0)
 
+-- Мультипликативная группа.
 variable {G : Type*} [Group G]
 
+-- Список аксиом мультипликативной группы:
 #check (mul_assoc : ∀ a b c : G, a * b * c = a * (b * c))
 #check (one_mul : ∀ a : G, 1 * a = a)
 #check (inv_mul_cancel : ∀ a : G, a⁻¹ * a = 1)
 
+-- Вспомогательная лема, которая используется ниже.
 lemma aux₁ (a b : G) : a = (b⁻¹ * b) * a := by
   nth_rw 1 [← one_mul a]
   rw [← inv_mul_cancel]
 
+-- Эта лемма мне так и не пригодилась.
+-- Но выглядит полезной, поэтому пока оставил.
 lemma aux₂ (a : G) : 1 = a⁻¹ * (1 * a) := by
   nth_rw 1 [← inv_mul_cancel a]
   nth_rw 2 [← one_mul a]
 
+-- Полезная вспомогательная лемма, используется ниже.
 theorem inv_inv_eq (a : G) : a⁻¹⁻¹ = a := by
   nth_rw 2 [← one_mul a]
   rw [← inv_mul_cancel a⁻¹]
@@ -198,11 +230,27 @@ theorem inv_inv_eq (a : G) : a⁻¹⁻¹ = a := by
   rw [inv_mul_cancel]
   rw [mul_one]
 
+-- Здесь молодец. Получилось имхо лучше, чем у автора.
 theorem mul_inv_cancel (a : G) : a * a⁻¹ = 1 := by
   rw [← inv_mul_cancel a⁻¹]
   rw [inv_inv_eq]
 
+-- Доказательство здорового человека.
 theorem mul_one (a : G) : a * 1 = a := by
+  rw [← inv_mul_cancel a]
+  rw [← mul_assoc]
+  rw [mul_inv_cancel]
+  rw [one_mul]
+-- Не заметил, что могу заменить 1 на a⁻¹ * a и
+-- сдвинув сбочки влево ассоциативностью поменять a * a⁻¹ на 1,
+-- получив таким образом умножение на 1 слева, аксиома которой у нас есть.
+--
+-- В общем: есть у тебя есть cancel, ассоциативность и единица справа/слева, а
+-- требуется доказать единицу с другой стороны, то используй assoc + cancel.
+
+-- Доказательство курильщика.
+-- Бля, делай перерывы, на это смотреть страшно.
+theorem mul_one' (a : G) : a * 1 = a := by
   rw [aux₁ a a⁻¹]
   rw [← inv_mul_cancel a]
   rw [← mul_assoc]
@@ -211,19 +259,45 @@ theorem mul_one (a : G) : a * 1 = a := by
   nth_rw 1 [mul_assoc a⁻¹⁻¹ 1]
   rw [one_mul]
 
+-- Вспомогательная лемма, которую я рассчитывал использовать
+-- для доказательства mul_inv_rev ниже, но она оказалась не нужна.
 theorem mul_inv_comm (a : G) : a * a⁻¹ = a⁻¹ * a := by
   rw [mul_inv_cancel]
   rw [inv_mul_cancel]
 
--- mul_comm?
-
+-- Здесь я не справился за час с чем-то.
+-- Да, доказательство чуть более сложное, чем для mul_inv_cancel.
 theorem mul_inv_rev (a b : G) : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
-  -- nth_rw 2 [aux₁ a b]
-  -- nth_rw 2 [aux₁ b a]
-  -- nth_rw 1 [← one_mul (a * b)⁻¹]
-  -- nth_rw 1 [← inv_mul_cancel b]
-  -- nth_rw 4 [aux₁ b b]
-  -- nth_rw 2 [mul_assoc]
-  sorry
+  rw [← one_mul b⁻¹]
+  rw [← inv_mul_cancel (a * b)]
+  rw [mul_assoc]
+  rw [mul_assoc]
+  rw [mul_assoc]
+  rw [← mul_assoc b b⁻¹ a⁻¹]
+  rw [mul_inv_cancel]
+  rw [one_mul]
+  rw [mul_inv_cancel]
+  rw [mul_one]
+
+-- Основная идея такого доказательства в том, что мы должны как-то добавить
+-- выражение (a * b)⁻¹ в правую часть, а всё, что появится в следствие этого
+-- добавления мы должны закэнслить. Остальное детали.
+
+-- Один из ключевых моментов, до которых я не смог догадаться
+-- это сдвиг _внутренних_ скобочек ассоциативностью:
+-- (a * (b * (b⁻¹ * a⁻¹))) =>
+-- (a * ((b * b⁻¹) * a⁻¹))
+
+-- Вот доказательство автора:
+theorem mul_inv_rev' (a b : G) : (a * b)⁻¹ = b⁻¹ * a⁻¹ := by
+  rw [← one_mul (b⁻¹ * a⁻¹)]
+  rw [← inv_mul_cancel (a * b)]
+  rw [mul_assoc]
+  rw [mul_assoc]
+  rw [← mul_assoc b b⁻¹]
+  rw [mul_inv_cancel]
+  rw [one_mul]
+  rw [mul_inv_cancel]
+  rw [mul_one]
 
 end MyRing

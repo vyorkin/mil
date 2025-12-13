@@ -11,6 +11,11 @@ example (a b c : ℝ) : c * b * a = b * (a * c) := by
   rw [mul_comm c (b * a)]
   rw [mul_assoc b a c]
 
+example (a b c : ℝ) : c * b * a = b * (a * c) := by
+  rw [mul_comm c b]
+  rw [mul_assoc b c a]
+  rw [mul_comm c a]
+
 -- No arguments
 
 example (a b c : ℝ) : a * (b * c) = b * (a * c) := by
