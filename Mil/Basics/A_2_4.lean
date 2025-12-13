@@ -4,12 +4,12 @@ import Mathlib
 
 variable (a b c d e f x y w z : ℝ)
 
-#check (lt_min_iff : a < min b c ↔ a < b ∧ a < c)
-#check (min_lt_iff : min a b < c ↔ a < c ∨ b < c)
-
 #check (min_le_left a b : min a b ≤ a)
 #check (min_le_right a b : min a b ≤ b)
 #check (le_min : c ≤ a → c ≤ b → c ≤ min a b)
+
+#check (lt_min_iff : a < min b c ↔ a < b ∧ a < c)
+#check (min_lt_iff : min a b < c ↔ a < c ∨ b < c)
 
 #check (le_min_iff : c ≤ min a b ↔ c ≤ a ∧ c ≤ b)
 #check (min_le_iff : min a b ≤ c ↔ a ≤ c ∨ b ≤ c)
@@ -28,16 +28,24 @@ variable (a b c d e f x y w z : ℝ)
 #check (le_max_right a b : b ≤ max a b)
 #check (max_le : a ≤ c → b ≤ c → max a b ≤ c)
 
+-- Из-за того, что нет скобок все эти значки мешаются в кучу
+-- и сложновато глазами распарсить отдельные конъюнкты/дизъюнкты.
+-- Поэтому ты просто не видишь, что можно применить эту теорему,
+-- как будто пробгаешь быстро взглядом и пропускаешь. Поставь скобки -
+-- тебе будет легче заметить то, на что не обращал внимания.
+#check (max_le_iff : max a b ≤ c ↔ (a ≤ c) ∧ (b ≤ c))
+#check (le_max_iff : a ≤ max b c ↔ (a ≤ b) ∨ (a ≤ c))
+
 example : min a b = min b a := by
   apply le_antisymm
   · show min a b ≤ min b a
     apply le_min
     · apply min_le_right
-    apply min_le_left
+    · apply min_le_left
   · show min b a ≤ min a b
     apply le_min
     · apply min_le_right
-    apply min_le_left
+    · apply min_le_left
 
 example : min a b = min b a := by
   have h : ∀ x y : ℝ, min x y ≤ min y x := by
@@ -60,40 +68,62 @@ example : max a b = max b a := by
   apply le_antisymm
   · apply max_le
     · apply le_max_right
-    apply le_max_left
+    · apply le_max_left
   apply max_le
   · apply le_max_right
-  apply le_max_left
+  · apply le_max_left
 
 example : min (min a b) c = min a (min b c) := by
   apply le_antisymm
   · apply le_min
-    · change min (min a b) c ≤ a
-      apply min_le_iff.mpr
+    · apply min_le_iff.mpr
       · left
         apply min_le_left
-    apply min_le_min
-    · apply min_le_right
-    apply le_rfl
+    · apply min_le_min
+      · apply min_le_right
+      · apply le_rfl
   apply le_min
   · apply le_min_iff.mpr
     · constructor
       · apply min_le_left
-      apply min_le_of_right_le
-      apply min_le_left
+      · apply min_le_of_right_le
+        apply min_le_left
   apply min_le_of_right_le
   apply min_le_right
 
--- TODO: prove associativity of max
+example : max (max a b) c = max a (max b c) := by
+  apply le_antisymm
+  · apply max_le
+    · apply max_le_max
+      · exact le_rfl
+      · exact le_max_left _ _
+    · rw [le_max_iff]
+      right
+      exact le_max_right _ _
+  · apply max_le
+    · rw [le_max_iff]
+      left
+      exact le_max_left _ _
+    · apply max_le
+      · rw [le_max_iff]
+        left
+        exact le_max_right _ _
+      · rw [le_max_iff]
+        right
+        exact le_rfl
 
 #check add_neg_cancel_right
+
+-- Операция min дистрибутивна относительно max так же как и
+-- умножение относительно сложения, ну и наоборот -
+-- max относительно min тоже дистрибутивна.
 
 theorem aux : min a b + c ≤ min (a + c) (b + c) := by
   apply le_min
   · apply add_le_add_right
     apply min_le_left
-  apply add_le_add_right
-  apply min_le_right
+  · apply add_le_add_right
+    apply min_le_right
 
 example : min a b + c = min (a + c) (b + c) := by
   apply le_antisymm
