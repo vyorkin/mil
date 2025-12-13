@@ -203,7 +203,7 @@ example : min a b + c = min (a + c) (b + c) := by
 --      rw [h]
 
 -- https://github.com/avigad/mathematics_in_lean_source/issues/348
--- #check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
+#check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
 
 example : |a| - |b| ≤ |a - b| :=
   sorry

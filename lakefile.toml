@@ -4,14 +4,15 @@ keywords = ["math"]
 defaultTargets = ["Mil"]
 
 [leanOptions]
-pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+pp.unicode.fun = true                 # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
 
 [[require]]
 name = "mathlib"
-scope = "leanprover-community"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.21.0"
 
 [[lean_lib]]
 name = "Mil"
