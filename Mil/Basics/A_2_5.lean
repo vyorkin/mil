@@ -493,11 +493,15 @@ example (x y : X) : 0 ≤ dist x y := by
   -- simp at h
   assumption
 
+-- ^^ Заметь, как ты снова не воспользовался тактикой linarith.
+-- Ты её не понимаешь, поэтому не пользуешься.
+-- А вот автор пользуется, см ниже.
+
 -- Читерское:
 example (x y : X) : 0 ≤ dist x y := by exact dist_nonneg
 
 -- Доказательство автора:
-example (x y : X) : 0 ≤ dist x y :=by
+example (x y : X) : 0 ≤ dist x y := by
   have : 0 ≤ dist x y + dist y x := by
     rw [← dist_self x]
     apply dist_triangle
