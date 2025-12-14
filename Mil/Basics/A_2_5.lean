@@ -2,30 +2,37 @@
 
 import Mathlib
 
-section
+namespace My1
+
 variable {α : Type*} [PartialOrder α]
 variable (x y z : α)
 
+-- Нестрогий частичный порядок
 #check x ≤ y
 #check (le_refl x : x ≤ x)
 #check (le_trans : x ≤ y → y ≤ z → x ≤ z)
 #check (le_antisymm : x ≤ y → y ≤ x → x = y)
 
+-- Стpогий частичный порядок
 #check x < y
 #check (lt_irrefl x : ¬(x < x))
 #check (lt_trans : x < y → y < z → x < z)
 #check (lt_of_le_of_lt : x ≤ y → y < z → x < z)
 #check (lt_of_lt_of_le : x < y → y ≤ z → x < z)
 
-example : x < y ↔ x ≤ y ∧ x ≠ y :=
-  lt_iff_le_and_ne
+example : x < y ↔ x ≤ y ∧ x ≠ y := lt_iff_le_and_ne
 
-end
+end My1
 
-section
--- Lattice = PartialOrder + {Sup, Inf}
+namespace My2
 
+-- Решётка это структура, которая расширяет частичный порядок
+-- операциями ⊓ и ⊔: Lattice = PartialOrder + {Inf, Sup}
+-- Операция inf: x ⊓ y на некотором
 variable {α : Type*} [Lattice α]
+-- это аналог min x y на ℝ,
+-- а операция sup: x ⊔ y это аналог max x y на ℝ.
+
 variable (x y z : α)
 
 #check x ⊓ y -- infinum/meet
@@ -37,15 +44,20 @@ variable (x y z : α)
 #check (le_sup_left : x ≤ x ⊔ y)
 #check (le_sup_right : y ≤ x ⊔ y)
 #check (sup_le : x ≤ z → y ≤ z → x ⊔ y ≤ z)
-end
 
-section
+-- Примеры решёток:
+-- 1. min, max на любом полностью упорядоченном множестве, типа ℤ или ℝ (порядок задан ≤)
+-- 2. ∩, ∪ на множестве подмножеств вложенных друг в друга (порядок задан ⊆)
+
+end My2
+
+namespace My3
+
 variable {α : Type*} [Lattice α]
 variable (x y z : α)
 
--- Use: le_refl, le_trans
-#check le_refl
-#check le_trans
+#check le_refl  -- a ≤ a
+#check le_trans -- a ≤ b → b ≤ c → a ≤ c
 
 example : x ⊓ y = y ⊓ x := by
   apply le_antisymm
@@ -70,19 +82,19 @@ example : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
     · show x ⊓ y ⊓ z ≤ x
       -- apply inf_le_of_left_le
       apply le_trans inf_le_left
-      apply inf_le_left
+      exact inf_le_left
     · apply inf_le_inf
       · apply inf_le_right
-      · apply le_refl
+      · exact le_refl z
   · apply le_inf
     · apply le_inf
-      · apply inf_le_left
+      · exact inf_le_left
       · show x ⊓ (y ⊓ z) ≤ y
         apply inf_le_of_right_le
-        apply inf_le_left
+        exact inf_le_left
     · show x ⊓ (y ⊓ z) ≤ z
       apply inf_le_of_right_le
-      apply inf_le_right
+      exact inf_le_right
 
 example : x ⊔ y = y ⊔ x := by
   apply le_antisymm
@@ -113,6 +125,13 @@ example : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
   apply sup_le_sup_right
   · apply le_sup_right
 
+end My3
+
+namespace My4
+
+variable {α : Type*} [Lattice α]
+variable (x y z : α)
+
 -- TODO: Rewrite using calc & trans tactics
 
 #check inf_comm
@@ -137,9 +156,10 @@ theorem absorb2 : x ⊔ x ⊓ y = x := by
 #check inf_sup_self
 #check sup_inf_self
 
-end
+end My4
 
-section
+namespace My5
+
 variable {α : Type*} [DistribLattice α]
 variable (x y z : α)
 
@@ -175,9 +195,10 @@ variable (x y z : α)
 -- В задаче ниже нужно показать, что эти дистрибувности друг из друга следуют.
 -- Короче показать, что верно "туда-сюда".
 
-end
+end My5
 
-section
+namespace My6
+
 variable {α : Type*} [Lattice α]
 variable (a b c : α)
 
@@ -227,9 +248,10 @@ example (h : ∀ x y z : α, x ⊔ y ⊓ z = (x ⊔ y) ⊓ (x ⊔ z))
 -- Вернуться сюда позже.
 -- Читай внимательно описание задачи. Мне не ясна формулировка и
 -- не понятно чего от меня хочет автор.
-end
+end My6
 
-section
+namespace My7
+
 -- Можно комбинировать аксиоматические структуры (наборы аксиом).
 variable {R : Type*} [Ring R] [PartialOrder R] [IsStrictOrderedRing R]
 variable (a b c : R)
@@ -245,9 +267,11 @@ example (h : 0 ≤ b - a) : a ≤ b := by
 
 example (h : a ≤ b) (h' : 0 ≤ c) : a * c ≤ b * c := by
   sorry
-end
 
-section
+end My7
+
+namespace My8
+
 variable {X : Type*} [MetricSpace X]
 variable (x y z : X)
 
@@ -260,4 +284,5 @@ example (x y : X) : 0 ≤ dist x y := by
 
 -- Автор рекомендует использовать эту теорему:
 #check nonneg_of_mul_nonneg_left
-end
+
+end My8

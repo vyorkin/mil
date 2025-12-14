@@ -125,18 +125,6 @@ theorem aux : min a b + c ≤ min (a + c) (b + c) := by
   · apply add_le_add_right
     apply min_le_right
 
-example : min a b + c = min (a + c) (b + c) := by
-  apply le_antisymm
-  · apply aux
-  · have h : min (a + c) (b + c) =
-             min (a + c) (b + c) - c + c := by rw [sub_add_cancel]
-    rw [h]
-    apply add_le_add_right
-    rw [sub_eq_add_neg]
-    apply le_trans
-    · apply aux
-    · rw [add_neg_cancel_right, add_neg_cancel_right]
-
 -- Моя следующая фундаментальная ошибка в том, что
 -- я перестаю пользоваться интуицией когда перехожу к формальному доказательству.
 -- Я перестаю видеть смысл за символами и начинаю оперировать ими
@@ -202,16 +190,40 @@ example : min a b + c = min (a + c) (b + c) := by
 --               min (a + c) (b + c) - c + c := by rw [sub_add_cancel]
 --      rw [h]
 
--- https://github.com/avigad/mathematics_in_lean_source/issues/348
+-- Передокажем.
+example : min a b + c = min (a + c) (b + c) := by
+  apply le_antisymm
+  · apply aux
+  · have h : min (a + c) (b + c) =
+             min (a + c) (b + c) - c + c := by rw [sub_add_cancel]
+    rw [h]
+    apply add_le_add_right
+    rw [sub_eq_add_neg]
+    apply le_trans
+    · apply aux
+    · rw [add_neg_cancel_right, add_neg_cancel_right]
+
+-- Deprecated in Mathlib 4.25.0,
+-- see: https://github.com/avigad/mathematics_in_lean_source/issues/348
 #check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
 
-example : |a| - |b| ≤ |a - b| :=
-  sorry
+#check sub_add_cancel -- a - b + b = a
 
-theorem whatever : |a| - |b| ≤ |a - b| := by
-  rw [tsub_le_iff_right]
-  -- apply?
-  sorry
+example : |a| - |b| ≤ |a - b| := by
+  rw [sub_le_iff_le_add]
+  nth_rw 1 [← sub_add_cancel a b]
+  -- |(a - b) + b| ≤ |a - b| + |b|
+  -- |   a    + b| ≤ |  a  | + |b|
+  exact abs_add (a - b) b
+
+-- Вот ещё несколько теоремок из той же серии:
+#check (sub_le_iff_le_add      :  a - c ≤ b ↔ a ≤ b + c)
+#check (add_neg_le_iff_le_add  : a + -b ≤ c ↔ a ≤ c + b)
+#check (add_neg_le_iff_le_add' : a + -b ≤ c ↔ a ≤ b + c)
+#check add_neg_cancel_right -- a + b + -b = a
+#check sub_add_cancel_right -- a - (b + a) = -b
+-- ^ Там внутри их намного больше - прыгай на определение любой из них и
+-- смотри какие есть рядом. Нужно держать их перед глазами, это помогает.
 
 -- Divisibility
 
@@ -220,8 +232,7 @@ example (h₀ : x ∣ y) (h₁ : y ∣ z) : x ∣ z :=
 
 example : x ∣ y * x * z := by
   apply dvd_mul_of_dvd_left
-  apply dvd_mul_left
-  -- exact dvd_mul_left x y
+  exact dvd_mul_left _ _
 
 example : x ∣ x ^ 2 := by
   apply dvd_mul_left
@@ -232,16 +243,16 @@ example (h : x ∣ w) : x ∣ y * (x * z) + x ^ 2 + w ^ 2 := by
     · rw [← mul_assoc]
       apply dvd_mul_of_dvd_left
       apply dvd_mul_left
-    apply dvd_mul_left
-  apply dvd_pow h
-  linarith
+    · apply dvd_mul_left
+  · apply dvd_pow h
+    linarith
 
 variable (m n : ℕ)
 
 #check (Nat.gcd_zero_right n : Nat.gcd n 0 = n)
-#check (Nat.gcd_zero_left n : Nat.gcd 0 n = n)
+#check (Nat.gcd_zero_left n  : Nat.gcd 0 n = n)
 #check (Nat.lcm_zero_right n : Nat.lcm n 0 = 0)
-#check (Nat.lcm_zero_left n : Nat.lcm 0 n = 0)
+#check (Nat.lcm_zero_left n  : Nat.lcm 0 n = 0)
 
 example : Nat.gcd m n = Nat.gcd n m := by
   apply dvd_antisymm
