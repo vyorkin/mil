@@ -76,13 +76,34 @@ example : x ⊓ y = y ⊓ x := by
   apply le_antisymm
   repeat simp only [le_inf, inf_le_right, inf_le_left]
 
+-- Идея следующего доказательства в том, что мы хотим использовать
+-- более простые промежуточные утверждения. Тактика trans создаст 2 подцели,
+-- которые будут доказуемы потому что мы что-то знаем о `x ⊓ y` и `x ⊔ y`, но
+-- ничего не знаем oб их комбинациях типа x ⊓ y ⊓ z.
+--
+-- Тактика trans s заменит цель ⊢ t → u на:
+-- ⊢ t → s
+-- ⊢ s → u
+--
+-- В нашем случае:
+-- (x ⊓ y) ⊓ z ≤ x
+--       t       u
+--
+-- s = x ⊓ y
+-- 1. x ⊓ y ⊓ z ≤ x ⊓ y
+-- 2. x ⊓ y ≤ x
+
 example : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
   apply le_antisymm
   · apply le_inf
-    · show x ⊓ y ⊓ z ≤ x
+    · show (x ⊓ y) ⊓ z ≤ x
+      --        t        u
+      --   s = x ⊓ y
+      --   x ⊓ y ⊓ z ≤ x ⊓ y
+      --   x ⊓ y ≤ x
+      trans x ⊓ y <;> exact inf_le_left
       -- apply inf_le_of_left_le
-      apply le_trans inf_le_left
-      exact inf_le_left
+      -- apply le_trans inf_le_left
     · apply inf_le_inf
       · apply inf_le_right
       · exact le_refl z
