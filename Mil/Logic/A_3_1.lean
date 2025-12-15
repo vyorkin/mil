@@ -363,3 +363,134 @@ example (ef : FnEven f) (og : FnOdd g) : FnEven fun x ↦ f (g x) := by
 -- Когда научишься замечать кванторы существования – ты будешь находить их везде.
 
 end My7
+
+namespace My8
+
+-- В mathlib есть хорошая библиотека для работы с множествами,
+-- но важно понимать, что Lean не основан на теории множеств.
+
+-- В Lean множество Set α — это просто коллекция объектов типа α.
+-- Если x : α и s : Set α, то выражение x ∈ s — это корректное утверждение (Prop).
+-- Но если y : β, то y ∈ s не имеет смысла, потому что такое выражение
+-- "не имеет типа", короче Lean не примет его.
+
+-- В отличие от этого, в ZF-теории множеств выражение a ∈ b всегда
+-- имеет смысл для любых объектов a и b, даже если математически оно
+-- абсурдно (например, sin ∈ cos). Lean специально устроен так, чтобы
+-- не допускать бессмысленных выражений — это одно из преимуществ перед
+-- чисто теоретико-множественными основаниями.
+
+-- При этом в Lean всё же можно формализовать и саму теорию множеств, например,
+-- независимость гипотезы континуума от аксиом ZF, но это уже
+-- относится к метатеории и выходит за рамки книги.
+
+variable {α : Type*} (r s t : Set α)
+
+-- Нотация подмножества
+-- s ⊆ t
+-- раскрывается как
+-- ∀ {x : α}, x ∈ s → x ∈ t
+
+example : s ⊆ s := by
+  -- change ∀ {x : α}, x ∈ s → x ∈ s
+  intro x hx
+  exact hx
+
+theorem Subset.refl : s ⊆ s := fun _x hx ↦ hx
+
+theorem Subset.trans : r ⊆ s → s ⊆ t → r ⊆ t := by
+  intro h0 h1
+  intro _  h2
+  exact h1 (h0 h2)
+
+theorem Subset.trans' : r ⊆ s → s ⊆ t → r ⊆ t :=
+  fun h0 h1 _ h2 => h1 (h0 h2)
+
+end My8
+
+namespace My9
+
+variable {α : Type*} [PartialOrder α]
+variable (s : Set α) (a b : α)
+
+def SetUb (s : Set α) (a : α) :=
+  ∀ x, x ∈ s → x ≤ a
+
+-- Упражнение.
+
+-- Моё доказательство:
+example (h : SetUb s a) (h' : a ≤ b) : SetUb s b := by
+  intro x hx
+  unfold SetUb at h
+  have h_x_le_a := h x hx
+  trans a <;> assumption
+
+-- Я слишком зациклен на использовании тактики trans?
+-- Используй иногда apple le_trans для разнообразия.
+
+-- Доказательство автора.
+example (h : SetUb s a) (h' : a ≤ b) : SetUb s b := by
+  intro x hx
+  unfold SetUb at h
+  have h_x_le_a := h x hx
+  apply le_trans h_x_le_a h'
+
+end My9
+
+namespace My10
+
+open Function
+
+-- Функция называется иъективной, если верна вот такая импликация:
+-- f(x₁) = f(x₂) => x₁ = x₂
+
+-- def Injective (f : α → β) : Prop :=
+--   ∀ ⦃a₁ a₂⦄, f a₁ = f a₂ → a₁ = a₂
+
+
+example (c : ℝ) : Injective fun x ↦ x + c := by
+  intro x₁ x₂ h
+  dsimp at h
+  -- add_left_inj : b + a = c + a ↔ b = c
+  rw [← add_left_inj c]
+  assumption
+
+example (c : ℝ) : Injective fun x ↦ x + c := by
+  intro x₁ x₂ h
+  exact (add_left_inj c).mp h
+
+-- Упражнения.
+
+#check mul_right_inj        -- : (a * b = a * c) ↔ b = c
+#check mul_right_cancel     -- : (a * b = c * b) → a = c
+#check mul_right_cancel_iff -- : (b * a = c * a) ↔ b = c
+
+#check mul_left_cancel      -- : (a * b = a * c) → b = c
+#check mul_left_cancel₀     -- : (ha : a ≠ 0)
+--                               (h : a * b = a * c) : b = c
+
+example {c : ℝ} (h : c ≠ 0) : Injective fun x ↦ c * x := by
+  intro x₁ x₂ h'
+  dsimp at h'
+  apply mul_left_cancel₀ h h'
+
+section
+
+variable {α : Type*} {β : Type*} {γ : Type*}
+variable {g : β → γ} {f : α → β}
+
+example (injg : Injective g) (injf : Injective f) : Injective fun x ↦ g (f x) := by
+  intro x₁ x₂ h
+  dsimp at h
+  unfold Injective at injf
+  unfold Injective at injg
+  have h0 := injg h
+  exact injf h0
+
+example (injg : Injective g) (injf : Injective f) : Injective fun x ↦ g (f x) := by
+  intro x₁ x₂ h; dsimp at h
+  exact injf (injg h)
+
+end
+
+end My10
