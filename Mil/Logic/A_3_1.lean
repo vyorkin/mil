@@ -447,7 +447,6 @@ open Function
 -- def Injective (f : α → β) : Prop :=
 --   ∀ ⦃a₁ a₂⦄, f a₁ = f a₂ → a₁ = a₂
 
-
 example (c : ℝ) : Injective fun x ↦ x + c := by
   intro x₁ x₂ h
   dsimp at h

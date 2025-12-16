@@ -6,7 +6,7 @@ namespace My1
 
 example : ∃ x : ℝ, 2 < x ∧ x < 3 := by
   -- C помощью тактики use предъявляем конкретный объект.
-  use 5 / 2
+  use 5/2
   show (2 < 5/2) ∧ (5/2 < 3)
   -- Нормализует (вычисляет) числовое выражение,
   -- которое в нашем случае сводится к True ∧ True.
@@ -45,15 +45,15 @@ variable {f g : ℝ → ℝ}
 variable {a b c : ℝ}
 
 -- Если
--- для f верхней гранью является числo a,
--- для g верхней гранью является числo b,
+-- числo a является верхней гранью для f,
+-- числo b является верхней гранью для g,
 -- то верхней гранью ф-ции h x ↦ f x + g x будет число a + b.
 
 theorem fnUb_add (hfa : FnUb f a) (hgb : FnUb g b)
   : FnUb (fun x ↦ f x + g x) (a + b) :=
   fun x ↦ add_le_add (hfa x) (hgb x)
 
--- Можно использовать fnUb_add, чтобы доказать что если f и g есть
+-- Можно использовать fnUb_add, чтобы доказать что если у f и g есть
 -- верхние грани, то и у их суммы существует верхняя грань.
 
 example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := by
@@ -64,9 +64,9 @@ example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := b
   -- ^ Это аналогично использованию obtain:
   -- obtain ⟨a, ha⟩ := ubf
   rcases ubg with ⟨b, hb⟩
+  unfold FnUb at ha hb
   use a + b
   unfold FnUb
-  unfold FnUb at ha hb
   dsimp
   show ∀ (x : ℝ), f x + g x ≤ a + b
   apply fnUb_add ha hb
@@ -112,6 +112,8 @@ example (ubf : FnHasUb f) (h : c ≥ 0) : FnHasUb (fun x ↦ c * f x) := by
   rcases ubf with ⟨a, ha⟩
   unfold FnUb at ha; unfold FnHasUb
   -- Момент когда я свернул не туда.
+  -- Это бессмысленно, тк тут я говорю, что такой верхней гранью будет число a,
+  -- но интуитивно понятно, что для эта функция ограничена сверху числом c * a.
   use a
   -- Если бы я раскрыл определение чуть раньше, то
   -- было бы больше шансов заметить как можно получить
@@ -166,7 +168,7 @@ namespace My3
 -- Тактика rcases позволяет рекурсивно распаковывать всякие
 -- определения и выражения, именно поэтому "эр"-кейсэс (r - recursive).
 
--- А тактика rintro это intro + rcases.
+-- Тактика rintro = intro + rcases.
 example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) := by
   rintro ⟨a, ubfa⟩ ⟨b, ubgb⟩
   exact ⟨a + b, fnUb_add ubfa ubgb⟩
@@ -175,5 +177,158 @@ example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) := by
 example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) :=
   fun ⟨a, ubfa⟩ ⟨b, ubgb⟩ ↦ ⟨a + b, fnUb_add ubfa ubgb⟩
 
+-- obtain
+
+example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := by
+  obtain ⟨a, ubfa⟩ := ubf
+  obtain ⟨b, ubgb⟩ := ubg
+  exact ⟨a + b, fnUb_add ubfa ubgb⟩
+
+example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
+  cases ubf
+  -- Здесь intro это название кейса (имя конструктора квантора существования).
+  -- Тактика case задаёт имена для только что введённых в контекст термов: a ubfa.
+  case intro a ubfa =>
+    cases ubg
+    case intro b ubgb =>
+      exact ⟨a + b, fnUb_add ubfa ubgb⟩
+
+example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
+  cases ubf
+  -- Тактика next позволяет не писать конструктор intro и (так же как и case)
+  -- задаёт имена для только что введённых в контекст термов: a ubfa.
+  next a ubfa =>
+    cases ubg
+    next b ubgb =>
+      exact ⟨a + b, fnUb_add ubfa ubgb⟩
+
+example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
+  match ubf, ubg with
+  | ⟨a, ubfa⟩, ⟨b, ubgb⟩ =>
+    exact ⟨a + b, fnUb_add ubfa ubgb⟩
+
+example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x :=
+  match ubf, ubg with
+  | ⟨a, ubfa⟩, ⟨b, ubgb⟩ =>
+    ⟨a + b, fnUb_add ubfa ubgb⟩
 
 end My3
+
+namespace My4
+
+variable {α : Type*} [CommRing α]
+
+def SumOfSquares (x : α) := ∃ a b, x = a ^ 2 + b ^ 2
+
+theorem sumOfSquares_mul {x y : α} (sosx : SumOfSquares x) (sosy : SumOfSquares y) :
+  SumOfSquares (x * y) := by
+  rcases sosx with ⟨a, b, xeq⟩
+  rcases sosy with ⟨c, d, yeq⟩
+  rw [xeq, yeq]
+  unfold SumOfSquares
+  use a * c - b * d, a * d + b * c
+  ring
+
+-- Мы будем довольно часто распаковывать квантор сущ. и использовать
+-- утверждение внутри него, чтобы переписывать цель (гипотезы в контексте).
+-- Поэтому проще использовать следующий шорткат.
+
+theorem sumOfSquares_mul' {x y : α} (sosx : SumOfSquares x) (sosy : SumOfSquares y) :
+  SumOfSquares (x * y) := by
+  rcases sosx with ⟨a, b, rfl⟩ -- rfl сразу переписывает цель утверждением xeq из ∃ a b, xeq
+  rcases sosy with ⟨c, d, rfl⟩
+  use a * c - b * d, a * d + b * c
+  ring
+
+section
+variable {a b c : ℕ}
+
+-- Кванторы существования спрятаны всюду за определениями.
+-- Умей их видеть.
+
+example (divab : a ∣ b) (divbc : b ∣ c) : a ∣ c := by
+  rcases divab with ⟨d, beq⟩
+  rcases divbc with ⟨e, ceq⟩
+  rw [ceq, beq]
+  use d * e
+  ring
+
+example (divab : a ∣ b) (divbc : b ∣ c) : a ∣ c := by
+  rcases divab with ⟨d, rfl⟩; rcases divbc with ⟨e, rfl⟩
+  use d * e; ring
+
+-- Упражнение.
+
+example (divab : a ∣ b) (divac : a ∣ c) : a ∣ b + c := by
+  rcases divab with ⟨d, rfl⟩;
+  rcases divac with ⟨e, rfl⟩
+  use d + e
+  ring
+
+end
+
+end My4
+
+namespace My5
+
+open Function
+
+-- Функция f : α → β называется сюрьективной, если ∀ b, ∃ a, f a = b.
+
+example {c : ℝ} : Surjective fun x ↦ x + c := by
+  unfold Surjective
+  intro b
+  dsimp
+  use b - c
+  ring
+
+#check mul_div_cancel₀ -- (a : G₀) (hb : b ≠ 0) : b * (a / b) = a
+
+-- Упражнение.
+example {c : ℝ} (h : c ≠ 0) : Surjective fun x ↦ c * x := by
+  unfold Surjective; intro b; dsimp
+  use b / c
+  rw [mul_div_cancel₀]
+  assumption -- exact h
+
+end My5
+
+namespace My6
+
+-- В примере ниже тактика ring не справится самостоятельно.
+-- Мы используем field_simp, которая помогает избавиться от знаменателей.
+
+example (x y : ℝ) (h : x - y ≠ 0) : (x ^ 2 - y ^ 2) / (x - y) = x + y := by
+  field_simp [h]
+  ring
+
+open Function
+
+example {f : ℝ → ℝ} (h : Surjective f) : ∃ x, f x ^ 2 = 4 := by
+  -- unfold Surjective at h
+  rcases (h 2) with ⟨x, hx⟩
+  use x
+  rw [hx]
+  norm_num
+
+end My6
+
+namespace My7
+
+open Function
+
+variable {α : Type*} {β : Type*} {γ : Type*}
+variable {g : β → γ} {f : α → β}
+
+example (surjg : Surjective g) (surjf : Surjective f) :
+  Surjective fun x ↦ g (f x) := by
+  unfold Surjective at surjg surjf
+  intro c
+  dsimp
+  rcases surjg c with ⟨b, hb⟩
+  rcases surjf b with ⟨a, ha⟩
+  use a
+  rw [ha]
+  assumption -- exact hb
+
+end My7
