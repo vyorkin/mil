@@ -73,6 +73,7 @@ example : ¬FnHasUb (fun x ↦ x) := by
 -- Разбора решения автора.
 example : ¬FnHasUb fun x ↦ x := by
   unfold FnHasUb FnUb; dsimp
+  unfold Not
   rintro ⟨a, ha⟩
   -- Ключевая идея:
   have h : a + 1 ≤ a := ha (a + 1)
@@ -82,7 +83,7 @@ example : ¬FnHasUb fun x ↦ x := by
   have h' : ¬(1 ≤ (0:ℝ)) := by
     -- Здесь используем стандартный факт 0 < 1
     have : (0:ℝ) < 1 := by exact zero_lt_one
-    -- Из 0 < 1 следует ¬ (1 ≤ 0)
+    -- Из 0 < 1 следует ¬(1 ≤ 0)
     exact not_le_of_gt this
   exact h' h
 
@@ -97,7 +98,7 @@ example : ¬FnHasUb fun x ↦ x := by
 #check not_le_of_gt -- (hab : a < b) : ¬b ≤ a
 
 example : ¬FnHasUb fun x ↦ x := by
-  rintro ⟨a, ha⟩;
+  rintro ⟨a, ha⟩
   unfold FnUb at ha; dsimp at ha
   have h := ha (a + 1)
   -- Можно закончить прямо сейчас используя linarith.
@@ -131,7 +132,7 @@ namespace My3
 
 example (h : Monotone f) (h' : f a < f b) : a < b := by
   unfold Monotone at h
-  apply lt_of_not_ge
+  apply lt_of_not_ge -- (h : ¬b ≤ a) : a < b
   unfold Not; intro h0
   have h1 := h h0
   linarith
@@ -144,10 +145,15 @@ example (h : a ≤ b) (h' : f b < f a) : ¬Monotone f := by
 -- Упражнение.
 
 -- Можно доказать отрицание квантора всеобщности сконструировав контрпример.
-
-example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a ≤ b := by
+--
+-- Здесь мы доказываем, что обратное не всегда верно.
+-- Т.е. если развернуть импликацию в определении монотонности, то можно
+-- будет сконструировать такой пример f, что эта импликация будет не верной.
+example : ¬(∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a ≤ b) := by
   intro h
-  let f := fun _ : ℝ ↦ (0 : ℝ)
+  -- Вот для этой f (по сути это const 0) утверждение a ≤ b будет не верным.
+  let f : ℝ → ℝ := fun _ : ℝ ↦ (0:ℝ)
+  -- Нужно показать, что она монотонная.
   have monof : Monotone f := by
     have g : f a ≤ f b := le_refl _
     unfold Monotone
@@ -164,11 +170,11 @@ example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a �
   let f := fun _ : ℝ ↦ (0:ℝ)
   have monof : Monotone f := by
     intro a b leab
-    -- В этом месте я не доагадался, что это
+    -- В этом месте я не догадался, что это
     -- неравенство выполняется по определению функции.
     rfl
   have h' : f 1 ≤ f 0 := le_refl _
-  have h1 :  (1:ℝ) ≤ 0 := @h f monof 1 0 h'
+  have h1 : (1:ℝ) ≤ 0 := @h f monof 1 0 h'
   -- Можно закончить сразу тактикой linairth,
   -- а можно и сконструировать отрицание, используя факт о том, что 0 < 1.
   have h2 : ¬(1:ℝ) ≤ 0 := by exact not_le.mpr zero_lt_one
@@ -186,15 +192,16 @@ example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a �
 -- Упражнение.
 
 #check le_of_not_gt -- {a b : α}, ¬(b < a) → a ≤ b
-#check lt_irrefl
+#check lt_irrefl -- (a : α) : ¬a < a
 
 example (x : ℝ) (h : ∀ ε > 0, x < ε) : x ≤ 0 := by
-  apply le_of_not_gt
+  apply le_of_not_gt -- ¬(b < a) → a ≤ b
   intro hx
   replace h := h x
   replace h := h hx
   revert h
-  exact lt_irrefl x
+  show ¬x < x
+  exact lt_irrefl x -- (a : α) : ¬a < a
 
 end My3
 
@@ -206,6 +213,7 @@ example (h : ¬∃ x, P x) : ∀ x, ¬P x := by
   intro x hpx
   have hex : ∃ x, P x := ⟨x, hpx⟩
   contradiction
+  -- exact h hex
 
 example (h : ∀ x, ¬P x) : ¬∃ x, P x := by
   rintro ⟨x, hpx⟩
@@ -219,9 +227,10 @@ example (h : ¬∀ x, P x) : ∃ x, ¬P x := by
   intro x
   show P x
   by_contra h''
-  unfold Not at h'
+  -- unfold Not at h'
   have hnpx : ∃ x, ¬P x := ⟨x, h''⟩
-  exact h' hnpx
+  contradiction
+  -- exact h' hnpx
 
 example (h : ∃ x, ¬P x) : ¬∀ x, P x := by
   rcases h with ⟨x, hnpx⟩
@@ -250,14 +259,13 @@ example (h : ¬FnHasUb f) : ∀ a, ∃ x, f x > a := by
   intro x
   by_contra h''
   replace h'' : ¬(c ≥ f x) := h''
-  unfold Not at h''
+  -- unfold Not at h''
   -- ((c ≥ f x) → False) → c < f x
   -- ((a ≥ b  ) → False) → a < b
-  have h0 : c < f x := lt_of_not_ge h''
+  have h0 : c < f x := lt_of_not_ge h'' -- (h : ¬b ≤ a) : a < b
   replace h0 : f x > c := h0
   have h1 : ∃ x, f x > c := ⟨x, h0⟩
   exact h' h1
-
 
 end My4
 
@@ -266,13 +274,14 @@ namespace My5
 -- Тактика push_neg.
 
 example (h : ¬∀ a, ∃ x, f x > a) : FnHasUb f := by
-  push_neg at h
   unfold FnHasUb FnUb
+  push_neg at h
   exact h
 
 example (h : ¬FnHasUb f) : ∀ a, ∃ x, f x > a := by
   -- unfold FnHasUb FnUb at h
   dsimp only [FnHasUb, FnUb] at h
+  -- ^ Делает тоже, что и unfold выше
   push_neg at h
   exact h
 
@@ -308,6 +317,12 @@ example (x : ℝ) (h : ∀ ε > 0, x ≤ ε) : x ≤ 0 := by
   use x/2
   constructor <;> linarith
 
+-- Отличие contrapose от contrapose!
+--
+-- contrapose! делает тоже самое, что contrapose,
+-- только вдобавок применяет push_neg к цели и гипотезе,
+-- чтобы избавиться от отрицания.
+
 end My6
 
 namespace My7
@@ -330,7 +345,7 @@ namespace My7
 
 example (h : 0 < 0) : a > 37 := by
   exfalso
-  apply lt_irrefl 0 h
+  apply lt_irrefl 0 h -- (a : α) : ¬(a < a)
 
 example (h : 0 < 0) : a > 37 :=
   absurd h (lt_irrefl 0)
