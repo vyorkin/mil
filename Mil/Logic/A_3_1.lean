@@ -43,6 +43,7 @@ variable (ha : |a| < δ) (hb : |b| < δ)
 #check my_lemma2 h₀ h₁ ha hb
 -- Можно частично применить только к паре гипотез-аргументов.
 #check my_lemma2 h₀ h₁
+
 end
 
 end My1
@@ -166,6 +167,7 @@ def FnLb (f : ℝ → ℝ) (a : ℝ) : Prop :=
   ∀ x, a ≤ f x
 
 section
+
 variable (f g : ℝ → ℝ) (a b : ℝ)
 
 example (hfa : FnUb f a) (hgb : FnUb g b)
@@ -197,13 +199,14 @@ example (nnf : FnLb f 0) (nng : FnLb g 0)
   : FnLb (fun x ↦ f x * g x) 0 := by
   intro x
   dsimp
-  apply mul_nonneg
+  apply mul_nonneg -- (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b
   · apply nnf
   · apply nng
 
 example (hfa : FnUb f a) (hgb : FnUb g b) (nng : FnLb g 0) (nna : 0 ≤ a)
   : FnUb (fun x ↦ f x * g x) (a * b) := by
   intro x; dsimp
+  -- (h₁ : a ≤ b) (h₂ : c ≤ d) (c0 : 0 ≤ c) (b0 : 0 ≤ b) : a * c ≤ b * d
   apply mul_le_mul
   · apply hfa
   · apply hgb
@@ -229,9 +232,9 @@ variable {α : Type*} {R : Type*}
 def FnUb (f : α → R) (a : R) : Prop := ∀ x, f x ≤ a
 
 -- Теорема add_le_add принимает (h₁ : a ≤ b) и (h₂ : c ≤ d).
--- Мы её их и передаём, только у нас они завёрнуты в определения
--- h₁ := FnUb f a = f x ≤ a
--- h₂ := FbUb g b = g x ≤ b
+-- Мы ей их и передаём, только у нас они завёрнуты в определения
+-- h₁ = f x ≤ a = FnUb f a
+-- h₂ = g x ≤ b = FbUb g b
 
 theorem fnUb_add {f g : α → R} {a b : R}
                  (hfa : FnUb f a) (hgb : FnUb g b)
@@ -452,7 +455,7 @@ example (c : ℝ) : Injective fun x ↦ x + c := by
   dsimp at h
   -- add_left_inj : b + a = c + a ↔ b = c
   rw [← add_left_inj c]
-  assumption
+  assumption -- exact h
 
 example (c : ℝ) : Injective fun x ↦ x + c := by
   intro x₁ x₂ h

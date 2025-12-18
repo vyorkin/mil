@@ -16,6 +16,7 @@ example : ∃ x : ℝ, 2 < x ∧ x < 3 := by
 example : ∃ x : ℝ, 2 < x ∧ x < 3 := by
   have h1 : 2 < (5:ℝ)/2 := by norm_num
   have h2 : (5:ℝ)/2 < 3 := by norm_num
+  -- ^ Тут нам приходится аннотировать тип, тк Lean не может его вывести.
   use 5/2, h1, h2
 
 -- Тактика use пытается использовать все доступные в контексте гипотезы.
@@ -45,8 +46,8 @@ variable {f g : ℝ → ℝ}
 variable {a b c : ℝ}
 
 -- Если
--- числo a является верхней гранью для f,
--- числo b является верхней гранью для g,
+-- (hfa) числo a является верхней гранью для f,
+-- (hgb) числo b является верхней гранью для g,
 -- то верхней гранью ф-ции h x ↦ f x + g x будет число a + b.
 
 theorem fnUb_add (hfa : FnUb f a) (hgb : FnUb g b)
@@ -61,14 +62,17 @@ example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := b
   -- достаём из него a, для которой верно утверждение ha,
   -- ну и само утверждение ha тоже достаём.
   rcases ubf with ⟨a, ha⟩
-  -- ^ Это аналогично использованию obtain:
+  -- ^ Это аналогично использованию obtain или have:
   -- obtain ⟨a, ha⟩ := ubf
+  -- have   ⟨a, ha⟩ := ubf
   rcases ubg with ⟨b, hb⟩
-  unfold FnUb at ha hb
+  -- unfold FnUb at ha hb
+  unfold FnHasUb FnUb; dsimp
   use a + b
-  unfold FnUb
-  dsimp
   show ∀ (x : ℝ), f x + g x ≤ a + b
+  -- (ha : FnUb f a) (hb : FnUb g b) : FnUb (fun x ↦ f x + g x) (a + b)
+  --       ^             ^
+  --       Как раз эти гипотезы у нас есть в контексте.
   apply fnUb_add ha hb
 
 -- Более кратко и менее наглядно:
@@ -89,9 +93,8 @@ theorem fnLb_add (hfa : FnLb f a) (hgb : FnLb g b)
 example (lbf : FnHasLb f) (lbg : FnHasLb g) : FnHasLb fun x ↦ f x + g x := by
   rcases lbf with ⟨a, ha⟩
   rcases lbg with ⟨b, hb⟩
+  unfold FnLb at ha hb; unfold FnHasLb FnLb; dsimp
   use a + b
-  unfold FnLb; dsimp
-  unfold FnLb at ha hb
   show ∀ (x : ℝ), a + b ≤ f x + g x
   apply fnLb_add ha hb
 
@@ -143,10 +146,10 @@ example (ubf : FnHasUb f) (h : c ≥ 0) : FnHasUb (fun x ↦ c * f x) := by
 -- Работа над ошибками.
 example (ubf : FnHasUb f) (h : c ≥ 0) : FnHasUb (fun x ↦ c * f x) := by
   rcases ubf with ⟨a, ha⟩
-  unfold FnUb at ha; unfold FnHasUb
-  unfold FnUb; dsimp
+  unfold FnUb at ha; unfold FnHasUb FnUb; dsimp
   use c * a
   intro x
+  -- (h : b ≤ c) (a0 : 0 ≤ a) : a * b ≤ a * c
   apply mul_le_mul_of_nonneg_left
   · exact ha x
   · assumption
@@ -173,15 +176,18 @@ example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) := by
   rintro ⟨a, ubfa⟩ ⟨b, ubgb⟩
   exact ⟨a + b, fnUb_add ubfa ubgb⟩
 
--- Можно мэтчить аргументы.
+-- Можно мэтчить аргументы. Эквивалетно rintro.
 example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) :=
   fun ⟨a, ubfa⟩ ⟨b, ubgb⟩ ↦ ⟨a + b, fnUb_add ubfa ubgb⟩
 
 -- obtain
 
 example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := by
-  obtain ⟨a, ubfa⟩ := ubf
-  obtain ⟨b, ubgb⟩ := ubg
+  obtain ⟨a, ubfa⟩ := ubf -- rcases ubf with ⟨a, ubfa⟩
+  obtain ⟨b, ubgb⟩ := ubg -- rcases ubg with ⟨b, ubgb⟩
+  -- ^ Тут использование obtain эквивалетно использованию have:
+  -- have ⟨a, ubfa⟩ := ubf
+  -- have ⟨b, ubgb⟩ := ubg
   exact ⟨a + b, fnUb_add ubfa ubgb⟩
 
 example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
@@ -195,8 +201,8 @@ example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
 
 example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb fun x ↦ f x + g x := by
   cases ubf
-  -- Тактика next позволяет не писать конструктор intro и (так же как и case)
-  -- задаёт имена для только что введённых в контекст термов: a ubfa.
+  -- Тактика next позволяет не писать конструктор intro и задаёт имена для
+  -- только что введённых в контекст термов a ubfa (аналогично case).
   next a ubfa =>
     cases ubg
     next b ubgb =>
@@ -231,7 +237,7 @@ theorem sumOfSquares_mul {x y : α} (sosx : SumOfSquares x) (sosy : SumOfSquares
 
 -- Мы будем довольно часто распаковывать квантор сущ. и использовать
 -- утверждение внутри него, чтобы переписывать цель (гипотезы в контексте).
--- Поэтому проще использовать следующий шорткат.
+-- Поэтому проще использовать следующий шорткат с rfl.
 
 theorem sumOfSquares_mul' {x y : α} (sosx : SumOfSquares x) (sosy : SumOfSquares y) :
   SumOfSquares (x * y) := by
@@ -243,12 +249,15 @@ theorem sumOfSquares_mul' {x y : α} (sosx : SumOfSquares x) (sosy : SumOfSquare
 section
 variable {a b c : ℕ}
 
--- Кванторы существования спрятаны всюду за определениями.
--- Умей их видеть.
+-- Кванторы существования, как и кванторы всеобщности
+-- спрятаны всюду за определениями. Умей их видеть.
 
 example (divab : a ∣ b) (divbc : b ∣ c) : a ∣ c := by
   rcases divab with ⟨d, beq⟩
   rcases divbc with ⟨e, ceq⟩
+  -- Не всегда сразу понятно как развернуть определение, скрытое за нотацией.
+  -- Например, тут нужно разворачивать сразу два определения:
+  unfold Dvd.dvd Nat.instDvd; dsimp
   rw [ceq, beq]
   use d * e
   ring
@@ -275,10 +284,11 @@ open Function
 
 -- Функция f : α → β называется сюрьективной, если ∀ b, ∃ a, f a = b.
 
-example {c : ℝ} : Surjective fun x ↦ x + c := by
-  unfold Surjective
-  intro b
-  dsimp
+-- def Surjective (f : α → β) : Prop :=
+--   ∀ b, ∃ a, f a = b
+
+example {c : ℝ} : Surjective (fun x ↦ x + c) := by
+  unfold Surjective; dsimp; intro b
   use b - c
   ring
 
@@ -305,8 +315,8 @@ example (x y : ℝ) (h : x - y ≠ 0) : (x ^ 2 - y ^ 2) / (x - y) = x + y := by
 open Function
 
 example {f : ℝ → ℝ} (h : Surjective f) : ∃ x, f x ^ 2 = 4 := by
-  -- unfold Surjective at h
-  rcases (h 2) with ⟨x, hx⟩
+  unfold Surjective at h
+  rcases h 2 with ⟨x, hx⟩ -- obtain ⟨x, hx⟩ := h 2
   use x
   rw [hx]
   norm_num
@@ -320,8 +330,7 @@ open Function
 variable {α : Type*} {β : Type*} {γ : Type*}
 variable {g : β → γ} {f : α → β}
 
-example (surjg : Surjective g) (surjf : Surjective f) :
-  Surjective fun x ↦ g (f x) := by
+example (surjg : Surjective g) (surjf : Surjective f) : Surjective fun x ↦ g (f x) := by
   unfold Surjective at surjg surjf
   intro c
   dsimp
