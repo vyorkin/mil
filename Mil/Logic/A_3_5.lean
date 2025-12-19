@@ -10,8 +10,9 @@ example (h : y > x ^ 2) : y > 0 ∨ y < -1 := by
   left
   have hx : x ^ 2 ≥ 0 := pow_two_nonneg x -- (a : R) : 0 ≤ a ^ 2
   linarith [hx]
+  -- ^ То же самое можно было бы сделать без введения вспомогательной
+  -- гипотезы - сразу "инлайн", как в примере ниже.
 
--- Ну или то же самое без введение вспомогательной гипотезы.
 example (h : -y > x ^ 2 + 1) : y > 0 ∨ y < -1 := by
   right
   linarith [pow_two_nonneg x]
@@ -21,10 +22,11 @@ example (h : y < -1) : y > 0 ∨ y < -1 := Or.inr h
 
 example : x < |y| → (x < y ∨ x < -y) := by
   -- Знакомься - второй "режим работы" тактики rcases:
-  -- le_or_gt : (a b : α) a ≤ b ∨ b < a
-  rcases (le_or_gt 0 y) with h | h -- (0 y : α) : 0 ≤ y ∨ y < 0
-  -- Автор рассматривает эти 2 варианта, чтобы
-  -- воспользоваться соответствующими теоремами про модуль числа.
+  --      le_or_gt :                  (a b : α) a ≤ b ∨ b < a
+  rcases (le_or_gt 0 y) with h | h -- (0 y : α) 0 ≤ y ∨ y < 0
+  -- Автор рассматривает эти 2 неравенства 0 ≤ y и y < 0, чтобы
+  -- воспользоваться соответствующими теоремами про модуль числа и
+  -- избавиться от модуля.
   · rw [abs_of_nonneg h] -- (h : 0 ≤ a) : |a| = a
     show x < y → (x < y ∨ x < -y)
     intro h
@@ -35,10 +37,12 @@ example : x < |y| → (x < y ∨ x < -y) := by
     right
     exact h
 
--- В случае "или" лучше использовать cases:
+-- В случае "или" лучше (?) использовать cases:
 -- 1. Кейсы имеют название, соответствующее конструктору.
 -- 2. Гипотеза вводится ближе к месту использования.
 -- 3. Кейсы можно доказывать в любом порядке.
+--
+-- Тогда возникает вопрос: почему автор предпочитает rcases h with h' | h'.
 
 example : x < |y| → x < y ∨ x < -y := by
   cases le_or_gt 0 y
@@ -133,9 +137,8 @@ theorem abs_add' (x y : ℝ) : |x + y| ≤ |x| + |y| := by
 
 -- Ещё упражнения.
 
-#check lt_iff_le_not_ge -- : a < b ↔ (a ≤ b ∧ ¬b ≤ a)
-
-#check abs_choice
+#check lt_iff_le_not_ge -- a < b ↔ (a ≤ b ∧ ¬b ≤ a)
+#check abs_choice -- (x : α) : |x| = x ∨ |x| = -x
 
 -- Моё доказательство.
 theorem lt_abs : x < |y| ↔ (x < y ∨ x < -y) := by
@@ -166,6 +169,8 @@ theorem lt_abs : x < |y| ↔ (x < y ∨ x < -y) := by
 
 -- Доказательство автора.
 theorem lt_abs' : x < |y| ↔ (x < y ∨ x < -y) := by
+  -- Заметь как он начинает не с разбиения би-импликации, а
+  -- с введение гипотез о двух неравенствах: 0 ≤ y и y < 0.
   rcases le_or_gt 0 y with h | h
   · rw [abs_of_nonneg h] -- (h : 0 ≤ a) : |a| = a
     constructor
@@ -186,9 +191,6 @@ theorem lt_abs' : x < |y| ↔ (x < y ∨ x < -y) := by
     · linarith
     · exact h'
 
-#check le_abs_self     -- (x : ℝ) :  x ≤ |x| := by
-#check neg_le_abs_self -- (x : ℝ) : -x ≤ |x| := by
-
 -- Моё доказательство.
 theorem abs_lt : |x| < y ↔ (-y < x ∧ x < y) := by
   constructor
@@ -203,11 +205,9 @@ theorem abs_lt : |x| < y ↔ (-y < x ∧ x < y) := by
       constructor <;> linarith
   · rcases le_or_gt 0 x with h | h
     · rw [abs_of_nonneg h]
-      intros
-      linarith
+      intros; linarith
     · rw [abs_of_neg h]
-      intros
-      linarith
+      intros; linarith
 
 -- Доказательство автора.
 theorem abs_lt' : |x| < y ↔ -y < x ∧ x < y := by
@@ -240,7 +240,7 @@ namespace My2
 
 #check lt_trichotomy -- (a b : α) : (a < b) ∨ (a = b) ∨ (b < a)
 
--- Вариантов может быть больше двух, как в следующем примере.
+-- Для rcases вариантов может быть больше двух, как в следующем примере.
 example {x : ℝ} (h : x ≠ 0) : x < 0 ∨ x > 0 := by
   rcases lt_trichotomy x 0 with xlt | xeq | xgt
   · left
@@ -251,8 +251,11 @@ example {x : ℝ} (h : x ≠ 0) : x < 0 ∨ x > 0 := by
 
 variable (m n k : ℕ)
 
--- Вложенный дестрачеринг и переписывание с rfl работает и для дизъюнкций.
-example (h : m ∣ n ∨ m ∣ k) : m ∣ n * k := by
+-- Вложенный дестракчеринг и переписывание с rfl работает и для дизъюнкций.
+example (h : (m ∣ n) ∨ (m ∣ k)) : m ∣ n * k := by
+  -- Иногда лучше использовать simp only вместо unfold.
+  simp only [Dvd.dvd] at *
+  -- rcases h with ⟨a, h₀⟩ | ⟨b, h₁⟩
   rcases h with ⟨a, rfl⟩ | ⟨b, rfl⟩
   · rw [mul_assoc]
     -- apply dvd_mul_right
@@ -342,6 +345,7 @@ example (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
     rw [← mul_one 1, ← sq] at h₀
     rw [← pow_two_sub_pow_two]
     assumption
+  -- (a * b = 0) → (a = 0) ∨ (b = 0)
   rcases eq_zero_or_eq_zero_of_mul_eq_zero h₁ with h' | h'
   · right
     rw [add_eq_zero_iff_eq_neg] at h'
@@ -391,16 +395,81 @@ end My3
 
 namespace My4
 
--- Ещё упражнения.
+-- Элемент a является левым делителем нуля, если существует
+-- ненулевой b такой, что ab = 0, и, соответственно,
+-- правым делителем нуля, если существует ненулевой b,
+-- при котором ba = 0.
+
+-- Теорема eq_zero_or_eq_zero_of_mul_eq_zero говорит о том, что для
+-- вещественных чисел (ℝ) не существует (не тривиальных) делителей нуля.
+--
+-- Коммутативное кольцо с таким свойством называется
+-- областью целостности (integral domain).
+
+-- Доказательства двух соответствующих теорем выше должны работать
+-- и для области целостности R.
 
 variable {R : Type*} [CommRing R] [IsDomain R]
 variable (x y : R)
 
 example (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-
-  sorry
+  have h₀ : x ^ 2 - 1 = 0 := by rw [h, sub_self]
+  have h₁ : (x + 1) * (x - 1) = 0 := by
+    rw [← h₀]
+    ring
+  rcases eq_zero_or_eq_zero_of_mul_eq_zero h₁ with h' | h'
+  · right
+    exact eq_neg_iff_add_eq_zero.mpr h' -- a = -b ↔ (a + b = 0)
+  · left
+    exact eq_of_sub_eq_zero h' -- (h : a - b = 0) : a = b
 
 example (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  have h' : x ^ 2 - y ^ 2 = 0 := by rw [h, sub_self]
+  have h'' : (x + y) * (x - y) = 0 := by
+    rw [← h']
+    ring
+  -- a * b = 0 → a = 0 ∨ b = 0
+  rcases eq_zero_or_eq_zero_of_mul_eq_zero h'' with h1 | h1
+  · right
+    exact eq_neg_iff_add_eq_zero.mpr h1
+  · left
+    exact eq_of_sub_eq_zero h1
 
 end My4
+
+namespace My5
+
+-- Исключённое третье.
+
+example (P : Prop) : ¬¬P → P := by
+  intro h
+  cases em P
+  · assumption
+  · contradiction
+
+-- Тактика by_cases h : P делает тоже самое, что и cases em P.
+-- Только в отличии от cases em P, она позвляет дать название
+-- гипотезе, которая будет включена в каждую ветку.
+-- Если не указать своё имя, то линь назовёт эту гипотезу h.
+
+example (P : Prop) : ¬¬ P → P := by
+  intro h
+  by_cases h' : P
+  · assumption
+  · contradiction
+
+-- Упражнение.
+
+example (P Q : Prop) : P → Q ↔ ¬P ∨ Q := by
+  constructor
+  · intro h
+    by_cases h' : P
+    · right
+      exact h h'
+    · left; assumption
+  · intro h hp
+    cases h
+    · contradiction
+    · assumption
+
+end My5
