@@ -174,6 +174,7 @@ example {x y : ℝ} : (x ≤ y ∧ ¬y ≤ x) ↔ (x ≤ y ∧ x ≠ y) := by
 #check pow_eq_zero    -- : a ^ n = 0 → a = 0
 
 #check mul_self_add_mul_self_eq_zero -- a * a + b * b = 0 ↔ a = 0 ∧ b = 0
+#check sq -- a ^ 2 = a * a
 
 -- Моё доказательство.
 theorem aux {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 :=
