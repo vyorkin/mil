@@ -62,11 +62,12 @@ example {a : ℝ} (h : 1 < a) : a < a * a := by
   convert (mul_lt_mul_right _).2 h
   --                        ^
   -- Ещё заметь, что вооот тут мы использовали подчёркивание,
-  -- поэтому Lean нас попросил доказать это утверждение.
+  -- поэтому Lean нас попросил доказать это (a0 : 0 < a) утверждение.
   · rw [one_mul]
   · exact lt_trans zero_lt_one h
 
--- Использование тактики convert можно рассматривать как альтернативу обратному рассуждению.
+-- Использование тактики convert можно рассматривать как
+-- альтернативу обратному рассуждению.
 
 end My2
 
@@ -74,11 +75,15 @@ namespace My3
 
 variable (s t : ℕ → ℝ) (a b c : ℝ)
 
-theorem convergesTo_const (a : ℝ)
-  : ConvergesTo (fun (_ : ℕ) ↦ a) a := by
-  unfold ConvergesTo; dsimp
+-- def ConvergesTo (s : ℕ → ℝ) (a : ℝ) :=
+--   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
+
+-- lim (s n ↦ a) = a
+theorem convergesTo_const (a : ℝ) : ConvergesTo (fun (_ : ℕ) ↦ a) a := by
+  unfold ConvergesTo
+  dsimp
   intro ε hε
-  use 0
+  use 0 -- C первого же номера уже выполняется.
   intro n hn
   -- rw [sub_self, abs_zero]
   simp
@@ -152,7 +157,7 @@ theorem convergesTo_add (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
   -- Не стесняйся его применять, ибо в каждом его (не)равенстве ты можешь перейти в
   -- тактик-мод и работать в нём.
   calc
-    |s n + t n - (a + b)| = |(s n - a) + (t n - b)| := by ring_nf
+    |s n + t n - (a + b)| = |(s n - a) + (t n - b)| := by congr; ring
     _ ≤ |s n - a| + |t n - b| := abs_add_le (s n - a) (t n - b)
     _ < ε := by assumption
 
@@ -182,14 +187,12 @@ theorem convergesTo_add' (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
   intro n hn
-  have ngeNs : n ≥ Ns := le_of_max_le_left hn
-  have ngeNt : n ≥ Nt := le_of_max_le_right hn
+  have ngeNs : n ≥ Ns := le_of_max_le_left hn  -- (h : max a b ≤ c) : a ≤ c
+  have ngeNt : n ≥ Nt := le_of_max_le_right hn -- (h : max a b ≤ c) : b ≤ c
   calc
-    |s n + t n - (a + b)| = |s n - a + (t n - b)| := by
-      congr
-      ring
-    _ ≤ |s n - a| + |t n - b| := (abs_add _ _)
-    _ < ε / 2 + ε / 2 := (add_lt_add (hs n ngeNs) (ht n ngeNt))
+    |s n + t n - (a + b)| = |(s n - a) + (t n - b)| := by congr; ring
+    _ ≤ |s n - a| + |t n - b| := abs_add (s n - a) (t n - b)
+    _ < ε / 2 + ε / 2 := add_lt_add (hs n ngeNs) (ht n ngeNt)
     _ = ε := by norm_num
 
 #check abs_of_neg    -- a < 0 → |a| = -a
@@ -227,25 +230,41 @@ theorem convergesTo_mul_const (cs : ConvergesTo s a) :
 #check mul_sub    -- a * (b + c) = a * b + a * c
 
 -- Доказательство автора.
-theorem convergesTo_mul_const'  (c : ℝ) (cs : ConvergesTo s a) :
-    ConvergesTo (fun n ↦ c * s n) (c * a) := by
+theorem convergesTo_mul_const' (cs : ConvergesTo s a) :
+  ConvergesTo (fun n ↦ c * s n) (c * a) := by
+  -- unfold ConvergesTo at *; dsimp
   by_cases h : c = 0
-  · convert convergesTo_const 0
+  · -- c = 0
+    have hh := convergesTo_const 0
+    convert hh
     · rw [h]; ring
     · rw [h]; ring
-  have acpos : 0 < |c| := abs_pos.mpr h -- 0 < |a| ↔ a ≠ 0
-  intro ε εpos; dsimp
-  have εcpos : 0 < ε / |c| := by
-    apply div_pos εpos acpos -- (ha : 0 < a) (hb : 0 < b) : 0 < a / b
-  -- Выбирем в качестве "любого ε" число ε / |c|.
-  rcases cs (ε / |c|) εcpos with ⟨Ns, hs⟩
-  use Ns
-  intro n ngt
-  have hgtz : |s n - a| < ε / |c| := hs n ngt
-  calc
-    |c * s n - c * a| = |c| * |s n - a| := by rw [← abs_mul, mul_sub]
-    _ < |c| * (ε / |c|) := mul_lt_mul_of_pos_left hgtz acpos
-    _ = ε := mul_div_cancel₀ _ (ne_of_lt acpos).symm
+  · -- c ≠ 0
+    have acpos : 0 < |c| := abs_pos.mpr h -- 0 < |a| ↔ a ≠ 0
+    intro ε εpos; dsimp
+    -- Делимое и делитель положительные - дробь положительная.
+    -- (ha : 0 < a) (hb : 0 < b) : 0 < a / b
+    have εcpos : 0 < ε / |c| := by apply div_pos εpos acpos
+    -- Выбирем в качестве "любого ε" число ε / |c|.
+    rcases cs (ε / |c|) εcpos with ⟨Ns, hs⟩
+    use Ns
+    intro n ngt
+    have hgtz : |s n - a| < ε / |c| := hs n ngt
+    calc
+      |c * s n - c * a| = |c| * |s n - a| := by rw [← abs_mul, mul_sub]
+      -- (bc : b < c) (a0 : 0 < a) : a * b < a * c
+      --
+      -- hgtz  : |s n - a| < ε / |c|
+      -- acpos : 0 < |c|
+      --
+      -- (bc : |s n - a| < (ε / |c|)) (a0 : 0 < |c|) :
+      -- |c| * |s n - a| < |c| * (ε / |c|)
+      _ < |c| * (ε / |c|) := mul_lt_mul_of_pos_left hgtz acpos
+      -- (hb : b ≠ 0) : b * (a / b) = a
+      _ = ε := mul_div_cancel₀ _ (ne_of_lt acpos).symm
+      --                          --------------------
+      --                                   ^^
+      --                           (h : a < b) : b ≠ a
 
 #check ne_of_lt -- : (h : a < b) : a ≠ b
 #check mul_div_cancel -- : (a : G₀) (hb : b ≠ 0) : b * (a / b) = a
@@ -254,6 +273,7 @@ theorem convergesTo_mul_const'  (c : ℝ) (cs : ConvergesTo s a) :
 -- Convergent sequence is eventually bounded in absolute value.
 theorem exists_abs_le_of_convergesTo
   (cs : ConvergesTo s a) : ∃ N b, ∀ n, N ≤ n → |s n| < b := by
+  unfold ConvergesTo at cs
   rcases cs 1 zero_lt_one with ⟨N, h⟩
   use N, |a| + 1
   sorry
