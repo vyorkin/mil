@@ -1,4 +1,6 @@
-import Mathlib
+import Mathlib.Tactic
+import Mathlib.Util.Delaborators
+import Mathlib.Data.Real.Basic
 
 -- 3.6. Последовательности и сходимость.
 
@@ -31,10 +33,29 @@ example : (fun x y : ℝ ↦ (x + y) ^ 2)
   ring
 
 -- congr
+--
+-- Позволяет доказать уравнение между двумя выражениями путем
+-- согласования тех частей, которые различаются.
+-- В примере ниже это позволяет избавиться от модуля.
 
 example (a b : ℝ) : |a| = |a - b + b| := by
   congr
   ring
+
+-- Это "тактика конгруэнтности", она сравнивает левую и правую части цели
+-- вида f as = f bs и раскладывает равенство на подцели для аргументов,
+-- где стороны отличаются.
+--
+-- Как работает:
+--
+-- Если цель имеет вид f a₁ … aₙ = f b₁ … bₙ, то congr
+-- снимает общий f и порождает подцели aᵢ = bᵢ только для
+-- тех аргументов, где Lean не может сам их отождествить.
+--
+-- congr k ограничивает глубину рекурсивного спуска: сколько
+-- "слоёв функций" можно разбирать. Это нужно, когда дефолтный congr
+-- лезет слишком глубоко и генерит неудобные/ложные подцели.
+
 
 -- convert
 --
@@ -73,12 +94,14 @@ end My2
 
 namespace My3
 
-variable (s t : ℕ → ℝ) (a b c : ℝ)
+-- variable (s t : ℕ → ℝ) (a b c : ℝ)
 
 -- def ConvergesTo (s : ℕ → ℝ) (a : ℝ) :=
 --   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
--- lim (s n ↦ a) = a
+-- lim (s n ↦ a) = a, фактически это:
+-- ∀ ε > 0, ∃ N, ∀ n ≥ N, |a - a| < ε
+-- ∀ ε > 0, ∃ N, ∀ n ≥ N,       0 < ε
 theorem convergesTo_const (a : ℝ) : ConvergesTo (fun (_ : ℕ) ↦ a) a := by
   unfold ConvergesTo
   dsimp
@@ -138,7 +161,8 @@ theorem convergesTo_const (a : ℝ) : ConvergesTo (fun (_ : ℕ) ↦ a) a := by
 -- ⊢ ∀ ε > 0, ∃ N, ∀ n ≥ N, |c * s n - c * a| < ε
 
 -- Моё доказательство.
-theorem convergesTo_add (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
+theorem convergesTo_add' {s t : ℕ → ℝ} {a b : ℝ}
+  (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
   ConvergesTo (fun n ↦ s n + t n) (a + b) := by
   unfold ConvergesTo; dsimp
   unfold ConvergesTo at ct cs
@@ -178,8 +202,9 @@ theorem convergesTo_add (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
 #check le_of_max_le_right -- (h : max a b ≤ c) : b ≤ c
 
 -- Доказательство автора.
-theorem convergesTo_add' (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
-    ConvergesTo (fun n ↦ s n + t n) (a + b) := by
+theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
+  (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
+  ConvergesTo (fun n ↦ s n + t n) (a + b) := by
   intro ε εpos
   dsimp
   have ε2pos : 0 < ε / 2 := by linarith
@@ -198,7 +223,9 @@ theorem convergesTo_add' (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
 #check abs_of_neg    -- a < 0 → |a| = -a
 #check abs_of_nonneg -- 0 ≤ a → |a| =  a
 
-theorem convergesTo_mul_const (cs : ConvergesTo s a) :
+theorem convergesTo_mul_const'
+  {s : ℕ → ℝ} {a : ℝ} (c : ℝ)
+  (cs : ConvergesTo s a) :
   ConvergesTo (fun n ↦ c * s n) (c * a) := by
   by_cases h : c = 0
   · have hh := convergesTo_const 0
@@ -230,12 +257,15 @@ theorem convergesTo_mul_const (cs : ConvergesTo s a) :
 #check mul_sub    -- a * (b + c) = a * b + a * c
 
 -- Доказательство автора.
-theorem convergesTo_mul_const' (cs : ConvergesTo s a) :
-  ConvergesTo (fun n ↦ c * s n) (c * a) := by
+theorem convergesTo_mul_const
+  {s : ℕ → ℝ} {a : ℝ} (c : ℝ)
+  (cs : ConvergesTo s a) : ConvergesTo (fun n ↦ c * s n) (c * a) := by
   -- unfold ConvergesTo at *; dsimp
   by_cases h : c = 0
   · -- c = 0
-    have hh := convergesTo_const 0
+    have hh := convergesTo_const 0 -- ∀ ε > 0, ∃ N, ∀ n ≥ N, |0 - 0| < ε
+    -- show ∀ ε > 0, ∃ N, ∀ n ≥ N, |c * s n - c * a| < ε
+    -- unfold ConvergesTo at hh; dsimp at hh
     convert hh
     · rw [h]; ring
     · rw [h]; ring
@@ -270,12 +300,158 @@ theorem convergesTo_mul_const' (cs : ConvergesTo s a) :
 #check mul_div_cancel -- : (a : G₀) (hb : b ≠ 0) : b * (a / b) = a
 #check mul_lt_mul_of_pos_left -- : (bc : b < c) (a0 : 0 < a) : a * b < a * c
 
+-- Упражнение.
 -- Convergent sequence is eventually bounded in absolute value.
-theorem exists_abs_le_of_convergesTo
+theorem exists_abs_le_of_convergesTo' {s : ℕ → ℝ} {a : ℝ}
   (cs : ConvergesTo s a) : ∃ N b, ∀ n, N ≤ n → |s n| < b := by
   unfold ConvergesTo at cs
+  -- Выбираем ε = 1, 1 > 0
   rcases cs 1 zero_lt_one with ⟨N, h⟩
   use N, |a| + 1
+  show ∀ (n : ℕ), N ≤ n → |s n| < |a| + 1
+  intro n hn
+  have hh := h n hn
+  rw [add_comm, ← add_neg_lt_iff_lt_add]
   sorry
 
+-- Проблемы:
+-- 1. На шарю за congr.
+--    Вот так можно:
+--    |s n| = |s n - a + a| := by congr.
+--     s n - 0 = s n - (a + a)
+-- 2.
+
+-- Доказательство автора.
+theorem exists_abs_le_of_convergesTo {s : ℕ → ℝ} {a : ℝ}
+  (cs : ConvergesTo s a) : ∃ N b, ∀ n, N ≤ n → |s n| < b := by
+  rcases cs 1 zero_lt_one with ⟨N, h⟩
+  use N, |a| + 1
+  intro n ngt
+  calc
+    |s n| = |(s n - a) + a| := by
+      congr
+      show s n = s n - a + a -- Снял модуль
+      abel
+    _ ≤ |s n - a| + |a| := (abs_add _ _) -- |a + b| ≤ |a| + |b|
+    _ = |a| + |s n - a| := by rw [add_comm]
+    _ < |a| + 1 := by linarith [h n ngt] -- Потому что |s n - a| < 1
+
+-- In fact, the theorem could be strengthened to
+-- assert that there is a bound b that holds for all values of n.
+
+theorem aux' {s t : ℕ → ℝ} {a : ℝ}
+  (cs : ConvergesTo s a) (ct : ConvergesTo t 0) :
+  ConvergesTo (fun n ↦ s n * t n) 0 := by
+  intro ε εpos; dsimp
+  rcases exists_abs_le_of_convergesTo cs with ⟨N₀, B, h₀⟩
+  have h₁  : 0 ≤ |s N₀| := abs_nonneg (s N₀)
+  have hN₀ : N₀ ≤ N₀ := le_refl N₀
+  have h₂  : |s N₀| < B := h₀ N₀ hN₀
+  --
+  -- lt_of_le_of_lt : (hab : a ≤ b) (hbc : b < c)     : a < c
+  --                       ^             ^                ^
+  --                    h₁ : 0 ≤ |s N₀|  |                |
+  --                                  h₂ : |s N₀| < B : 0 < B
+  --
+  have Bpos : 0 < B := lt_of_le_of_lt h₁ h₂
+  have pos₀ : ε / B > 0 := div_pos εpos Bpos
+  -- unfold ConvergesTo at ct cs
+  rcases ct (ε / B) pos₀ with ⟨N₁, h₁⟩
+  use N₁
+  intro n hN₁; norm_num
+  -- have hN₁ : N₁ ≤ N₁ := le_refl N₁
+  replace h₁ := h₁ n hN₁; norm_num at h₁
+
+  -- have h₃ := h₀ n
+  rw [abs_mul]
+
+  -- Вот тут если посмотреть на h₀ и h₁, то сразу
+  -- можно догадаться что делать дальше.
+
+  sorry
+
+#check abs_mul -- |a * b| = |a| * |b|
+
+-- (h₁ : a < b) (h₂ : c < d) (a0 : 0 ≤ a) (c0 : 0 ≤ c) : a * c < b * d
+#check mul_lt_mul''
+
+-- Что пошло не так:
+-- 1. Не догадался использовать max N₀ N₁, так же как
+--    мы это делали при доказательстве сходимости суммы.
+-- 2. Не увидел, что можно воспользоваться mul_lt_mul'' : a * c < b * d,
+--    показав необходимые посылки.
+
+-- Догадался по ε * (ε / B), но не увидел, что для этого нужно обеспечить
+-- одновременную справедливость для обоих утверждений.
+
+-- Доказатльство автора (разбор).
+theorem aux {s t : ℕ → ℝ} {a : ℝ}
+  (cs : ConvergesTo s a) (ct : ConvergesTo t 0) :
+  ConvergesTo (fun n ↦ s n * t n) 0 := by
+  intro ε εpos
+  dsimp
+  rcases exists_abs_le_of_convergesTo cs with ⟨N₀, B, h₀⟩
+  have Bpos : 0 < B := lt_of_le_of_lt (abs_nonneg _) (h₀ N₀ (le_refl _))
+  have pos₀ : ε / B > 0 := div_pos εpos Bpos
+  rcases ct _ pos₀ with ⟨N₁, h₁⟩
+  use max N₀ N₁
+  intro n ngt
+  have ngeN₀ : n ≥ N₀ := le_of_max_le_left ngt
+  have ngeN₁ : n ≥ N₁ := le_of_max_le_right ngt
+  calc
+    |s n * t n - 0| = |s n| * |t n - 0| := by rw [sub_zero, abs_mul, sub_zero]
+    _ < B * (ε / B) := by
+      have hh₁ : |s n| < B := h₀ n ngeN₀
+      have hh₂ : |t n - 0| < ε / B := h₁ n ngeN₁
+      have hh₃ : 0 ≤ |s n| := abs_nonneg (s n)
+      have hh₄ : 0 ≤ |t n - 0| := abs_nonneg (t n - 0)
+      -- (hh₁ : a < b) (hh₂ : c < d) (hh₃ : 0 ≤ a) (hh₄ : 0 ≤ c) : a * c < b * d
+      apply mul_lt_mul'' hh₁ hh₂ hh₃ hh₄
+    _ = ε := mul_div_cancel₀ _ (ne_of_lt Bpos).symm
+
+theorem convergesTo_mul {s t : ℕ → ℝ} {a b : ℝ}
+  (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
+  ConvergesTo (fun n ↦ s n * t n) (a * b) := by
+  have h₁ : ConvergesTo (fun n ↦ s n * (t n + -b)) 0 := by
+    apply aux cs
+    have hh := convergesTo_add ct (convergesTo_const (-b))
+    convert hh
+    ring
+  have hh := convergesTo_add h₁ (convergesTo_mul_const b cs)
+  convert hh using 1
+  · ext; ring
+  ring
+
+-- TODO: Вернуться сюда позже и передоказать
+-- все недоказанные теоремы о сходимости последовательностей.
+
+-- Упражнение.
+-- TODO:
+
+theorem convergesTo_unique {s : ℕ → ℝ} {a b : ℝ}
+      (sa : ConvergesTo s a) (sb : ConvergesTo s b) :
+    a = b := by
+  by_contra abne
+  have : |a - b| > 0 := by sorry
+  let ε := |a - b| / 2
+  have εpos : ε > 0 := by
+    change |a - b| / 2 > 0
+    linarith
+  rcases sa ε εpos with ⟨Na, hNa⟩
+  rcases sb ε εpos with ⟨Nb, hNb⟩
+  let N := max Na Nb
+  have absa : |s N - a| < ε := by sorry
+  have absb : |s N - b| < ε := by sorry
+  have : |a - b| < |a - b| := by sorry
+  exact lt_irrefl _ this
+
 end My3
+
+namespace My4
+
+variable {α : Type*} [LinearOrder α]
+
+def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
+  ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
+
+end My4
