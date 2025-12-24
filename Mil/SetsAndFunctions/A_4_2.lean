@@ -33,10 +33,12 @@ example : f ⁻¹' (u ∩ v) = f ⁻¹' u ∩ f ⁻¹' v := by
   rfl
 
 -- Образ функции f:
+-- Все такие y для которых найдутся x из области опр. ф-ции f.
+--
 -- image f s = f '' s := { y | ∃ x, x ∈ s ∧ f x = y }.
 --
 -- Поэтому гипотезу образа можно распаковать так:
--- y ∈ ⟨ev_x, x_in_s, fx_eq_y⟩.
+-- y ∈ ⟨x, xs, hxeqy⟩.
 
 -- Дистрибутивность образа.
 --
@@ -85,7 +87,8 @@ example : f '' (s ∪ t) = f '' s ∪ f '' t := by
     · use x, Or.inl xs
     · use x, Or.inr xt
 
--- Эта лемма позвляет тебе построить образ.
+-- Слeдующая теорема позвляет тебе построить образ.
+--
 -- Если у тебя есть это:
 -- (f : α → β) {s : Set α} {x : α} (h : x ∈ s)
 -- то применяя эту лемму ты получишь f '' s:
@@ -93,7 +96,9 @@ example : f '' (s ∪ t) = f '' s ∪ f '' t := by
 #check mem_image_of_mem -- Конструктор образа ф-ции.
 
 example : s ⊆ f ⁻¹' (f '' s) := by
-  intro x xs -- Раскрывает определение подмножества.
+  -- Раскрывает определение подмножества
+  -- (s ⊆ t) = ∀ x, x ∈ s → x ∈ t
+  intro x xs
   show x ∈ f ⁻¹' (f '' s)
   -- f ⁻¹' s = { x | f x ∈ s }
   -- f  '' s = { y | ∃ x, x ∈ s ∧ f x = y }
@@ -174,12 +179,14 @@ example (h : Injective f) : f ⁻¹' (f '' s) ⊆ s := by
 
 -- 1.b.
 example (h : Injective f) : f ⁻¹' (f '' s) ⊆ s := by
+  -- unfold image preimage
   rintro x ⟨y, ys, fxeq⟩
   rw [← h fxeq]
   exact ys
 
 -- 2.a.
 example : f '' (f ⁻¹' u) ⊆ u := by
+  unfold image preimage
   rintro x ⟨y, hy, hyeqx⟩
   rw [← hyeqx]
   exact hy
@@ -227,9 +234,8 @@ example : f ⁻¹' (u ∪ v) = f ⁻¹' u ∪ f ⁻¹' v := by
     · right; assumption
 
 -- 7.a.
-example : f '' (s ∩ t) ⊆ f '' s ∩ f '' t := by
+example : (f '' (s ∩ t)) ⊆ ((f '' s) ∩ (f '' t)) := by
   rintro x ⟨y, ⟨hys, hyt⟩, hyeq⟩
-  unfold image
   exact ⟨⟨y, hys, hyeq⟩, ⟨y, hyt, hyeq⟩⟩
 
 -- 8.a.
@@ -252,14 +258,47 @@ example (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
   rw [h hzeq] at hzs
   exists y
 
-example : f '' s \ f '' t ⊆ f '' (s \ t) := by
-  sorry
+-- Нотация вычитания множеств:
+-- x ∈ s \ t = x ∈ s ∧ x ∉ t
 
-example : f ⁻¹' u \ f ⁻¹' v ⊆ f ⁻¹' (u \ v) := by
-  sorry
+-- Когда видишь s \ t сразу думай о том, чтобы прийти к противоречию
+-- или об использовании логической контрапозиции (contrapose! h).
 
+-- 9.a.
+example : ((f '' s) \ (f '' t)) ⊆ (f '' (s \ t)) := by
+  rintro z ⟨⟨y, hys, hyeq⟩, fnit⟩
+  -- show z ∈ f '' (s \ t)
+  use y
+  -- unfold Not at fnit
+  constructor
+  · constructor
+    · assumption
+    · contrapose! fnit
+      use y
+  · assumption
+
+-- 10.a.
+example : (f ⁻¹' u) \ (f ⁻¹' v) ⊆ (f ⁻¹' (u \ v)) := by
+  rintro z ⟨hpre, hnpre⟩
+  constructor <;> assumption
+
+-- 11.a.
 example : f '' s ∩ v = f '' (s ∩ f ⁻¹' v) := by
-  sorry
+  ext x
+  constructor
+  · rintro ⟨⟨y, hys, hyeqx⟩, hxv⟩
+    use y
+    constructor
+    · use hys
+      rw [← hyeqx] at hxv
+      exact hxv
+    · assumption
+  · rintro ⟨y, ⟨hys, hxv⟩, rfl⟩
+    unfold image
+    unfold preimage at hxv
+    constructor
+    · use y
+    · assumption
 
 example : f '' (s ∩ f ⁻¹' u) ⊆ f '' s ∩ u := by
   sorry
@@ -378,11 +417,11 @@ example (i : I) (injf : Injective f) : (⋂ i, f '' A i) ⊆ f '' ⋂ i, A i := 
 
 -- 4.a.
 example : (f ⁻¹' ⋃ i, B i) = ⋃ i, f ⁻¹' B i := by
-  sorry
+  ext x; simp
 
 -- 5.a.
 example : (f ⁻¹' ⋂ i, B i) = ⋂ i, f ⁻¹' B i := by
-  sorry
+  ext x; simp
 
 end My3
 
@@ -398,34 +437,46 @@ open Function
 
 -- The statement `Injective f` is provably equivalent to `InjOn f univ`:
 --
+-- Можно читать это как "инъективность на" (множестве):
 -- def InjOn (f : α → β) (s : Set α) : Prop :=
 --   ∀ ⦃x₁ : α⦄, x₁ ∈ s → ∀ ⦃x₂ : α⦄, x₂ ∈ s → f x₁ = f x₂ → x₁ = x₂
 --
 -- def Injective (f : α → β) : Prop :=
 --   ∀ ⦃a₁ a₂⦄, f a₁ = f a₂ → a₁ = a₂
+--
+-- Заметь, что понятие множества не используется в определении инъективности.
+-- В этом и есть отличие InjOn от Injective.
 
 -- InjOn f s - "f is injective on s ".
 example : InjOn f s ↔ (∀ x₁ ∈ s, (∀ x₂ ∈ s, (f x₁ = f x₂) → x₁ = x₂)) :=
   Iff.refl _
 
--- exp x — это экспонента, то есть e^x , где e — основание натуральных логарифмов.
+-- Здесь определение `exp x` — это e^x (экспонента),
+-- где e — основание натуральных логарифмов.
 
 example : InjOn log { x | x > 0 } := by
+  unfold InjOn
   intro x xpos y ypos
   show (log x = log y) → x = y
   intro h
   calc
+    -- Нам надо получить что-то, что синтаксически
+    -- соответствует тому, что у нас в гипотезе h и переписать.
     x = exp (log x) := by rw [exp_log xpos] -- exp (log x) = x
-    _ = exp (log y) := by rw [h]
-    _ = y := by rw [exp_log ypos]
+    _ = exp (log y) := by rw [h]  -- Теперь можем
+    _ = y := by rw [exp_log ypos] -- Снимаем лишнее
 
 -- range f is provably equal to f '' univ.
 -- Определение range f это почти тоже самое, что образ f:
+--
 -- range f            := { y | ∃ x,         f x = y }
 -- image f s = f '' s := { y | ∃ x, x ∈ s ∧ f x = y }
+--
 -- Но range не требует x ∈ s, и не требует от ι (йота) чтобы он был типом из Type.
 -- Йопта (ι) может быть любым Sort* как видно из определения range:
 -- variable {ι : Sort*} {f : ι → α}
+--
+-- Вопрос: почему это называется range?
 
 #check exp_pos -- (x : ℝ) : 0 < rexp x
 
@@ -453,10 +504,119 @@ example : InjOn sqrt { x | x ≥ 0 } := by
     _ = √y * √y := by rw [h]
     _ = y := by rw [mul_self_sqrt ypos]
 
-example : InjOn (fun x ↦ x ^ 2) { x : ℝ | x ≥ 0 } := by sorry
+#check sqrt_mul_self -- : √(x * x) = x
+#check sqrt_sq -- : (h : 0 ≤ x) : √(x ^ 2) = x
 
-example : sqrt '' { x | x ≥ 0 } = { y | y ≥ 0 } := by sorry
+example : InjOn (fun x ↦ x ^ 2) { x : ℝ | x ≥ 0 } := by
+  intro x₁ hx₁sq x₂ hx₂sq h
+  dsimp at h
+  calc
+    x₁ = √(x₁ * x₁) := by rw [sqrt_mul_self hx₁sq]
+    _ = √(x₁ ^ 2) := by rw [pow_two]
+    _ = √(x₂ ^ 2) := by rw [h]
+    _ = √(x₂ * x₂) := by rw [pow_two]
+    _ = x₂ := by rw [sqrt_mul_self hx₂sq]
 
-example : (range fun x ↦ x ^ 2) = { y : ℝ | y ≥ 0 } := by sorry
+-- 0 ≤ x  =>  x = y * y  =>  0 ≤ y
+-- 0 ≤ y ^ 2  =>  0 ≤ y
+
+#check sq_nonneg --  0 ≤ a ^ 2
+
+#check pow_two_nonneg  -- 0 ≤ a ^ 2
+--     ^ Это алиас для:
+#check mul_self_nonneg -- 0 ≤ a * a
+
+#check sqrt_nonneg -- 0 ≤ √x
+
+example : sqrt '' { x | x ≥ 0 } = { y | y ≥ 0 } := by
+  ext y; simp
+  constructor
+  · rintro ⟨x, hxge0, hxeq⟩
+    rw [← hxeq]
+    exact sqrt_nonneg x
+  · intro hy
+    use y^2
+    constructor
+    · exact sq_nonneg y
+    · exact sqrt_sq hy
+
+example : (range fun x ↦ x ^ 2) = { y : ℝ | y ≥ 0 } := by
+  ext x
+  -- rw [mem_range]
+  simp
+  constructor
+  · intro ⟨y, hy⟩
+    rw [← hy]
+    exact pow_two_nonneg y
+  · intro hx
+    use √x
+    exact sq_sqrt hx
 
 end My4
+
+namespace My5
+
+variable {α β : Type*} [Inhabited α]
+
+#check (default : α)
+
+variable (P : α → Prop) (h : ∃ x, P x)
+
+#check Classical.choose   -- : {p : α → Prop} (h : ∃ x, p x) : α
+#check Classical.choose h -- : x : α
+
+-- Если у тебя есть факт (h) о том, что ∃ x, p x
+-- то Classical.choose h "выберет" тебе этот x.
+
+example : P (Classical.choose h) :=
+  Classical.choose_spec h
+
+end My5
+
+namespace My6
+
+variable {α β : Type*} [Inhabited α]
+variable (P : α → Prop) (h : ∃ x, P x)
+
+noncomputable section
+
+open Function
+open Classical
+
+def inverse (f : α → β) : β → α := fun y : β ↦
+  if h : ∃ x, f x = y then Classical.choose h else default
+
+#check dif_pos -- (h :  e) → (if h : e then a else b) => a
+#check dif_neg -- (h : ¬e) → (if h : e then a else b) => b
+
+#print LeftInverse
+#print RightInverse
+
+end
+
+end My6
+
+export My6 (inverse)
+
+namespace My7
+
+variable {α β : Type*} [Inhabited α]
+variable (f : α → β)
+
+open Function
+
+-- def LeftInverse (g : β → α) (f : α → β) : Prop :=
+--   ∀ x, g (f x) = x
+
+-- def RightInverse (g : β → α) (f : α → β) : Prop :=
+--   ∀ x, f (g x) = x
+
+example : Injective f ↔ LeftInverse (inverse f) f := by
+  constructor
+  · unfold Injective LeftInverse -- inverse
+    sorry
+  · sorry
+
+example : Surjective f ↔ RightInverse (inverse f) f :=
+  sorry
+end My7
