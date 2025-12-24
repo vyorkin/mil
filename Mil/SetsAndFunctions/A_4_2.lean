@@ -556,29 +556,53 @@ end My4
 
 namespace My5
 
+-- Обратная функция.
+
 variable {α β : Type*} [Inhabited α]
 
 #check (default : α)
 
 variable (P : α → Prop) (h : ∃ x, P x)
 
-#check Classical.choose   -- : {p : α → Prop} (h : ∃ x, p x) : α
-#check Classical.choose h -- : x : α
+-- Чтобы определить обратную функцию для f : α → β, нам понадобятся два новых элемента.
+
+-- 1)
+-- Нужно учесть, что произвольный тип может быть пустым.
+-- Чтобы определить обратное значение для f y, когда не существует такого x,
+-- что f x = y, мы хотим сопоставить этому случаю некоторое значение по умолчанию из α.
+-- Добавление аннотации [Inhabited α] как параметра означает, что
+-- предполагается наличие у типа α некоторого "предпочтительного" элемента,
+-- обозначаемого как default.
+
+-- 2)
+-- Если существует более одного значения x, удовлетворяющего f x = y, то обратная
+-- функция должна выбрать одно из них. Для этого требуется обратиться к аксиоме выбора.
+-- В Lean существует несколько способов сделать это. Один из удобных — использовать
+-- классический оператор choose, показанный ниже.
 
 -- Если у тебя есть факт (h) о том, что ∃ x, p x
 -- то Classical.choose h "выберет" тебе этот x.
+--
+-- Другими словами:
+--
+-- Если (h : ∃ x, P x), то (Classical.choose h) это
+-- некоторое x, удовлетворяющее P x.
 
-example : P (Classical.choose h) :=
-  Classical.choose_spec h
+#check Classical.choose   -- : {p : α → Prop} (h : ∃ x, p x) : α
+#check Classical.choose h -- : x : α
+
+example : P (Classical.choose h) := Classical.choose_spec h
+
+-- Теорема Classical.choose_spec h утверждает, что
+-- Classical.choose h удовлетворяет этому свойству.
 
 end My5
 
 namespace My6
+noncomputable section
 
 variable {α β : Type*} [Inhabited α]
 variable (P : α → Prop) (h : ∃ x, P x)
-
-noncomputable section
 
 open Function
 open Classical
@@ -586,37 +610,59 @@ open Classical
 def inverse (f : α → β) : β → α := fun y : β ↦
   if h : ∃ x, f x = y then Classical.choose h else default
 
+theorem inverse_spec {f : α → β} (y : β) (h : ∃ x, f x = y) : f (inverse f y) = y := by
+  rw [inverse, dif_pos h]
+  -- Ключевой момент:
+  exact Classical.choose_spec h
+
 #check dif_pos -- (h :  e) → (if h : e then a else b) => a
 #check dif_neg -- (h : ¬e) → (if h : e then a else b) => b
 
 #print LeftInverse
 #print RightInverse
 
-end
+-- def LeftInverse (g : β → α) (f : α → β) : Prop :=
+--   ∀ x, g (f x) = x
+-- def RightInverse (g : β → α) (f : α → β) : Prop :=
+--   ∀ x, f (g x) = x
 
+end
 end My6
 
-export My6 (inverse)
+export My6 (inverse inverse_spec)
 
 namespace My7
+
+-- Упражнения.
+
+open Function
 
 variable {α β : Type*} [Inhabited α]
 variable (f : α → β)
 
-open Function
-
--- def LeftInverse (g : β → α) (f : α → β) : Prop :=
---   ∀ x, g (f x) = x
-
--- def RightInverse (g : β → α) (f : α → β) : Prop :=
---   ∀ x, f (g x) = x
-
+-- Первая попытка, когда я не внимательно прочитал,
+-- не заметил определение inverse_spec и не увидел, что автор
+-- предлагает использовать inverse_spec для этого упражнения.
 example : Injective f ↔ LeftInverse (inverse f) f := by
   constructor
-  · unfold Injective LeftInverse -- inverse
+  · intro hfi
+    intro y
+    -- unfold Injective at hfi
+    unfold inverse
+    rw [dif_pos]
+    · sorry
+    · sorry
+  · intro hlf x₁ x₂ hf
+    unfold LeftInverse at hlf
+    unfold inverse at hlf
+    replace hlf := hlf x₂
+    have hh : ∃ x, f x = f x₂ := ⟨x₂, rfl⟩
+    rw [dif_pos hh] at hlf
+
+    -- convert hlf
     sorry
-  · sorry
 
 example : Surjective f ↔ RightInverse (inverse f) f :=
   sorry
+
 end My7
