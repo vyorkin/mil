@@ -562,14 +562,16 @@ variable {α β : Type*} [Inhabited α]
 
 #check (default : α)
 
-variable (P : α → Prop) (h : ∃ x, P x)
+variable (P : α → Prop)
+variable (h : ∃ x, P x)
 
 -- Чтобы определить обратную функцию для f : α → β, нам понадобятся два новых элемента.
 
 -- 1)
 -- Нужно учесть, что произвольный тип может быть пустым.
 -- Чтобы определить обратное значение для f y, когда не существует такого x,
--- что f x = y, мы хотим сопоставить этому случаю некоторое значение по умолчанию из α.
+-- что f x = y, мы хотим сопоставить этому случаю некоторое
+-- значение x : α по умолчанию из области определения f.
 -- Добавление аннотации [Inhabited α] как параметра означает, что
 -- предполагается наличие у типа α некоторого "предпочтительного" элемента,
 -- обозначаемого как default.
@@ -580,13 +582,12 @@ variable (P : α → Prop) (h : ∃ x, P x)
 -- В Lean существует несколько способов сделать это. Один из удобных — использовать
 -- классический оператор choose, показанный ниже.
 
--- Если у тебя есть факт (h) о том, что ∃ x, p x
+-- Если у тебя есть факт (h) о том, что существует некоторый x для которого верно P x,
 -- то Classical.choose h "выберет" тебе этот x.
 --
 -- Другими словами:
 --
--- Если (h : ∃ x, P x), то (Classical.choose h) это
--- некоторое x, удовлетворяющее P x.
+-- Если (h : ∃ x, P x), то (Classical.choose h) это некоторый x удовлетворяющий P x.
 
 #check Classical.choose   -- : {p : α → Prop} (h : ∃ x, p x) : α
 #check Classical.choose h -- : x : α
@@ -601,6 +602,8 @@ end My5
 namespace My6
 noncomputable section
 
+-- Нам понадобится знание о населённых типах и default.
+
 variable {α β : Type*} [Inhabited α]
 variable (P : α → Prop) (h : ∃ x, P x)
 
@@ -610,8 +613,12 @@ open Classical
 def inverse (f : α → β) : β → α := fun y : β ↦
   if h : ∃ x, f x = y then Classical.choose h else default
 
+#check dif_pos h -- : dite (∃ x, P x) ?t ?f = ?t h
+
 theorem inverse_spec {f : α → β} (y : β) (h : ∃ x, f x = y) : f (inverse f y) = y := by
-  rw [inverse, dif_pos h]
+  unfold inverse
+  -- Пример использования dif_pos для редукции if then else:
+  rw [dif_pos h]
   -- Ключевой момент:
   exact Classical.choose_spec h
 
@@ -640,6 +647,29 @@ open Function
 variable {α β : Type*} [Inhabited α]
 variable (f : α → β)
 
+
+-- inverse_spec {f : α → β} (y : β) (h : ∃ x, f x = y) :
+--   f (inverse f y) = y := by
+
+example : Injective f ↔ LeftInverse (inverse f) f := by
+  constructor
+  · intro hinv y
+    unfold Injective at hinv
+    -- Не догадался сделать:
+    apply hinv
+    -- ^ Не увидел что хвосты совпадают.
+    -- apply inverse_spec
+    unfold inverse
+    -- rw [inverse_spec hhh]
+    have h : ∃ x, f x = f y := ⟨y, rfl⟩
+    have ⟨x, hx⟩ := h
+    have h' := hinv hx
+    rw [dif_pos h]
+    -- rw [inverse_spec h]
+
+    sorry
+  · sorry
+
 -- Первая попытка, когда я не внимательно прочитал,
 -- не заметил определение inverse_spec и не увидел, что автор
 -- предлагает использовать inverse_spec для этого упражнения.
@@ -662,7 +692,72 @@ example : Injective f ↔ LeftInverse (inverse f) f := by
     -- convert hlf
     sorry
 
-example : Surjective f ↔ RightInverse (inverse f) f :=
-  sorry
+-- Доказательство автора.
+theorem aux : Injective f ↔ LeftInverse (inverse f) f := by
+  constructor
+  · intro h y
+    apply h
+    apply inverse_spec
+    use y
+  · intro h x1 x2 e
+    have h1 : inverse f (f x1) = x1 := h x1
+    have h2 : inverse f (f x2) = x2 := h x2
+    rw [← h1, ← h2, e]
+
+example : Surjective f ↔ RightInverse (inverse f) f := by
+  constructor
+  · intro hs y
+    exact inverse_spec y (hs y)
+  · intro hri
+    unfold RightInverse at hri
+    -- unfold LeftInverse at hri
+    unfold Surjective
+    intro y
+    have h' := hri y
+    -- inverse_spec : (y : β) (h : ∃ x, f x = y) : f (inverse f y) = y
+
+    -- Что пошло не так?
+    -- 1. Не догадался использовать: use (inverse f y)
+    -- 2. Вообще не думаю о том, чтобы в use использовать составные выражения.
+
+    sorry
+
+example : Surjective f ↔ RightInverse (inverse f) f := by
+  constructor
+  · intro h y
+    apply inverse_spec
+    apply h
+  · intro h y
+    use (inverse f y)
+    apply h
+
+-- There is no surjective function from a set to its power set.
+-- Не существует сюръективной функции из множества в множество всех подмножеств.
+--                                 Surjective f := ∀ b, ∃ a, f a = b
+theorem Cantor : ∀ f : α → Set α, ¬Surjective f := by
+  intro f surjf
+  -- Множество всех подмножеств S:
+  -- Все множества i, которые не входят в то надмножество,
+  -- которое из них построено.
+  let S := { i | i ∉ f i }
+  unfold Surjective at surjf
+  -- Для любого такого надмножества существует множество j,
+  -- из которого оно построено (h : f j = S).
+  have hh : ∃ j, f j = S := surjf S
+  rcases hh with ⟨j, h⟩
+  -- По определению S выше j ∉ f j:
+  have h₁ : j ∉ f j := by
+    intro h'
+    have : j ∉ f j := by
+      rw [h] at h' -- (j ∈ S) ⇔ (j ∈ {i | i ∉ f i}) ⇔ (j ∉ f j)
+      exact h'
+    contradiction
+  have h₂ : j ∈ S := by
+    sorry
+  have h₃ : j ∉ S := by
+    sorry
+  contradiction
 
 end My7
+
+-- TODO: Пока отложим
