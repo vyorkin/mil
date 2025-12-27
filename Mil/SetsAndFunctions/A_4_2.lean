@@ -66,10 +66,11 @@ example : f '' (s ∪ t) = f '' s ∪ f '' t := by
     -- Сразу переписываем с помощью последнего уравнения
     -- из тройки, используя тактику rfl.
     rcases h with ⟨x, xs, rfl⟩ | ⟨x, xt, rfl⟩
-    · --          { y | ∃ x, x ∈ s ∧ f x = y }
-      --          ----------------------------
-      --                      ^^^
-      use x -- Раскрывает определение образа.
+    · --
+      unfold image
+      show f x ∈ {x | ∃ a ∈ s ∪ t, f a = x}
+      --                     ^^^
+      use x -- Раскрывает определение образа и снимает ∃.
       exact ⟨Or.inl xs, rfl⟩
     · use x
       exact ⟨Or.inr xt, rfl⟩
