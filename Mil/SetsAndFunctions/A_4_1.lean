@@ -139,6 +139,18 @@ variable (s t u : Set α)
 
 open Set
 
+example : s ∪ t = t ∪ s := by
+  ext x
+  constructor
+  · intro h
+    rcases h with hl | hr
+    · exact Or.inr hl
+    · exact Or.inl hr
+  · intro h
+    rcases h with hl | hr
+    · exact Or.inr hl
+    · exact Or.inl hr
+
 -- Равенство двух множеств определяется экстенсионально.
 
 example : s ∩ t = t ∩ s := by
@@ -161,10 +173,42 @@ example : s ∩ t = t ∩ s := by ext x; simp [and_comm]
 -- Альтернативный способ доказать равенство это
 -- использовать антисимметрию.
 
+-- Демидович, 2.
 example : s ∩ t = t ∩ s := by
   apply Subset.antisymm
   · rintro x ⟨xs, xt⟩; exact ⟨xt, xs⟩
   · rintro x ⟨xt, xs⟩; exact ⟨xs, xt⟩
+
+-- Демидович, 3.
+example : s ∩ (t ∩ u) = (s ∩ t) ∩ u := by
+  ext x
+  constructor
+  · rintro ⟨xs, ⟨xt, xu⟩⟩
+    exact ⟨⟨xs, xt⟩, xu⟩
+  · rintro ⟨⟨xs, xt⟩, xu⟩
+    exact ⟨xs, ⟨xt, xu⟩⟩
+
+-- Демидович, 6.
+example : (s ∪ t) = t ↔ (s ∩ t = s) := by
+  constructor
+  · intro h
+    ext x
+    constructor
+    · intro ⟨hxs, hxt⟩
+      exact hxs
+    · intro hxs
+      rw [← h]
+      rw [mem_inter_iff, mem_union]
+      exact ⟨hxs, Or.inl hxs⟩
+  · intro h
+    rw [← h]
+    ext x
+    constructor
+    · rintro (hxst | hxt)
+      · exact hxst.2
+      · exact hxt
+    · intro hxt
+      exact Or.inr hxt
 
 -- Упражнения.
 
@@ -400,8 +444,8 @@ example (x : ℕ) : x ∈ (univ : Set ℕ) := trivial
 -- Упражнение.
 
 #check Nat.Prime.eq_two_or_odd -- (hp : Nat.Prime p) : p = 2 ∨ p % 2 = 1
-#check (Nat.odd_iff : Odd n ↔ (n % 2 = 1))
-#check (Nat.not_even_iff_odd : ¬Even n ↔ Odd n)
+#check Nat.odd_iff -- : Odd n ↔ (n % 2 = 1)
+#check Nat.not_even_iff_odd -- : ¬Even n ↔ Odd n
 
 #check mem_setOf -- a ∈ {x | p x} ↔ p a
 
