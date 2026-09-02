@@ -176,7 +176,7 @@ example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) := by
   rintro ⟨a, ubfa⟩ ⟨b, ubgb⟩
   exact ⟨a + b, fnUb_add ubfa ubgb⟩
 
--- Можно мэтчить аргументы. Эквивалетно rintro.
+-- Можно мэтчить аргументы. Эквивалентно rintro.
 example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) :=
   fun ⟨a, ubfa⟩ ⟨b, ubgb⟩ ↦ ⟨a + b, fnUb_add ubfa ubgb⟩
 
@@ -185,7 +185,7 @@ example : FnHasUb f → FnHasUb g → FnHasUb (fun x ↦ f x + g x) :=
 example (ubf : FnHasUb f) (ubg : FnHasUb g) : FnHasUb (fun x ↦ f x + g x) := by
   obtain ⟨a, ubfa⟩ := ubf -- rcases ubf with ⟨a, ubfa⟩
   obtain ⟨b, ubgb⟩ := ubg -- rcases ubg with ⟨b, ubgb⟩
-  -- ^ Тут использование obtain эквивалетно использованию have:
+  -- ^ Тут использование obtain эквивалентно использованию have:
   -- have ⟨a, ubfa⟩ := ubf
   -- have ⟨b, ubgb⟩ := ubg
   exact ⟨a + b, fnUb_add ubfa ubgb⟩

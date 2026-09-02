@@ -88,7 +88,7 @@ example : f '' (s ∪ t) = f '' s ∪ f '' t := by
     · use x, Or.inl xs
     · use x, Or.inr xt
 
--- Слeдующая теорема позвляет тебе построить образ.
+-- Следующая теорема позволяет тебе построить образ.
 --
 -- Если у тебя есть это:
 -- (f : α → β) {s : Set α} {x : α} (h : x ∈ s)
@@ -253,7 +253,7 @@ example (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
   · exact hyeq
 
 -- 8.b.
--- Можно тоже самое сделать в 3 строчки.
+-- Можно то же самое сделать в 3 строчки.
 example (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by
   rintro x ⟨⟨y, hys, rfl⟩, ⟨z, hzs, hzeq⟩⟩
   rw [h hzeq] at hzs
@@ -471,7 +471,7 @@ example : InjOn log { x | x > 0 } := by
     _ = y := by rw [exp_log ypos] -- Снимаем лишнее
 
 -- range f is provably equal to f '' univ.
--- Определение range f это почти тоже самое, что образ f:
+-- Определение range f это почти то же самое, что образ f:
 --
 -- range f            := { y | ∃ x,         f x = y }
 -- image f s = f '' s := { y | ∃ x, x ∈ s ∧ f x = y }

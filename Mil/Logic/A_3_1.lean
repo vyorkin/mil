@@ -258,7 +258,7 @@ section
 variable (f g : ℝ → ℝ)
 
 example (mf : Monotone f) (mg : Monotone g) : Monotone (fun x ↦ f x + g x) := by
-  -- Разворачивает отпределения
+  -- Разворачивает определения
   unfold Monotone
   -- Хотя intro тоже развернуло бы
   intro a b -- a ≤ b → (fun x ↦ f x + g x) a ≤ (fun x ↦ f x + g x) b
@@ -312,7 +312,7 @@ namespace My7
 -- Функция называется чётной,   если ∀ x, f( x) =  f(-x)
 --
 -- Функция называется нечётной, если ∀ x, f(-x) = -f( x)
---                    или тоже самое ∀ x, f( x) = -f(-x)
+--                    или то же самое ∀ x, f( x) = -f(-x)
 --
 -- https://en.wikipedia.org/wiki/Even_and_odd_functions
 

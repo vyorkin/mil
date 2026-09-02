@@ -50,7 +50,7 @@ example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z := by
 example (x y z : ℝ) (h₀ : x ≤ y) (h₁ : y ≤ z) : x ≤ z :=
   le_trans h₀ h₁
 
--- Вот тоже самое:
+-- Вот то же самое:
 example (x : ℝ) : x ≤ x := by apply le_refl
 example (x : ℝ) : x ≤ x := le_refl x
 
