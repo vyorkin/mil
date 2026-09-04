@@ -7,8 +7,7 @@ My notes and exercise solutions for the
 textbook, worked through while learning Lean 4 and Mathlib. Code
 comments are in Russian.
 
-This is a learning repo, not a library or a style reference. Some
-exercises are solved more than once with different tactics, just to
+Some exercises are solved more than once with different tactics, to
 compare approaches. File layout and conventions are in
 [CLAUDE.md](CLAUDE.md).
 
