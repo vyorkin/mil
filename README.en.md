@@ -14,8 +14,7 @@ compare approaches. File layout and conventions are in
 Thanks to the textbook's authors — Jeremy Avigad, Patrick Massot, and
 everyone else who worked on it — and to the Mathlib community.
 
-If something's off in a proof, a comment, or the structure — sorry,
-open an issue or a PR.
+Sorry if something's off.
 
 ## Building
 
