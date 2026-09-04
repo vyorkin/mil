@@ -1,71 +1,45 @@
-# Mathematics in Lean — Notes and Solutions
+# Mathematics in Lean — notes and solutions
 
 [🇷🇺 Русский](README.md) · 🇬🇧 English
 
-## What this is
+My notes and exercise solutions for the
+[Mathematics in Lean](https://leanprover-community.github.io/mathematics_in_lean)
+textbook, worked through while learning Lean 4 and Mathlib. Code
+comments are in Russian.
 
-This repo holds my personal notes and exercise solutions for the
-[*Mathematics in Lean*](https://leanprover-community.github.io/mathematics_in_lean)
-textbook, worked through while learning Lean 4 and Mathlib. Code comments
-are written in Russian: this isn't a library or a showcase of idiomatic
-style, it's a working notebook for someone learning as they go. The bar
-is "the proof is correct and the notes will still be useful to me in six
-months," not production code quality.
+This is a learning repo, not a library or a style reference. Some
+exercises are solved more than once with different tactics, just to
+compare approaches. File layout and conventions are in
+[CLAUDE.md](CLAUDE.md).
 
-Many exercises are solved more than once with different tactics, on
-purpose, to compare approaches and see which one is clearer.
+Thanks to the textbook's authors — Jeremy Avigad, Patrick Massot, and
+everyone else who worked on it — and to the Mathlib community.
 
-Repo layout and conventions live in [CLAUDE.md](CLAUDE.md) (written as
-config for Claude Code, but it doubles as plain documentation — it
-explains how files map to the book's chapters/sections and how to add
-new ones).
-
-## Thanks
-
-Huge thanks to the authors of *Mathematics in Lean* — Jeremy Avigad,
-Patrick Massot, and the rest of the contributors — for a wonderful,
-carefully crafted textbook, and to the Lean/Mathlib community for
-making all of this possible.
-
-## Disclaimer
-
-This is a learning repo, not a reference solution set. Some proofs are
-probably not the most elegant, and some comments may be imprecise or
-out of date — I'm just figuring things out as I go. Sorry if something's
-off, and pull requests/issues are welcome if you spot a mistake.
+If something's off in a proof, a comment, or the structure — sorry,
+open an issue or a PR.
 
 ## Building
 
-- Build everything: `lake build`
-- Build/check a single file: `lake build Mil.Basics.A_2_1`
+- `lake build` — build everything
+- `lake build Mil.Basics.A_2_1` — build/check a single file
   (module path, dots not slashes, no `.lean`)
-- After a fresh clone (or a toolchain bump), fetch the prebuilt Mathlib
-  `.olean` cache, otherwise the first build compiles all of Mathlib:
-  `lake exe cache get`
+- `lake exe cache get` — after a fresh clone or a toolchain bump,
+  fetch the Mathlib cache, otherwise the first build compiles all of
+  Mathlib
 
-The Lean version is pinned in `lean-toolchain` and managed by `elan`;
-the Mathlib version is pinned in `lakefile.toml`.
+The Lean version is pinned in `lean-toolchain`, the Mathlib version
+in `lakefile.toml`.
 
 ## Structure
 
-Files are organized by book chapter, with section numbers matching the
-textbook's numbering (`Mil/<Chapter>/A_<chapter>_<section>.lean`):
+Files are laid out by book chapter: `Mil/<Chapter>/A_<chapter>_<section>.lean`,
+e.g. `Mil/Basics/A_2_1.lean` is section 2.1.
 
-| Book chapter | Directory |
-| --- | --- |
-| 2. Basics | `Mil/Basics` |
-| 3. Logic | `Mil/Logic` |
-| 4. Sets and Functions | `Mil/SetsAndFunctions` |
-| 5. Elementary Number Theory | `Mil/ElementaryNumberTheory` |
-| 6. Discrete Mathematics | `Mil/DiscreteMathematics` |
-| 7. Structures | `Mil/Structures` |
-| 8. Hierarchies | `Mil/Hierarchies` |
-| 9. Groups and Rings | `Mil/GroupsAndRings` |
-| 10. Linear Algebra | `Mil/LinearAlgebra` |
-| 11. Topology | `Mil/Topology` |
-| 12. Differential Calculus | `Mil/DifferentialCalculus` |
-| 13. Integration and Measure Theory | `Mil/IntegrationAndMeasureTheory` |
+Chapters: Basics (2), Logic (3), Sets and Functions (4), Elementary
+Number Theory (5), Discrete Mathematics (6), Structures (7),
+Hierarchies (8), Groups and Rings (9), Linear Algebra (10), Topology
+(11), Differential Calculus (12), Integration and Measure Theory (13).
 
 ## License
 
-[Unlicense](LICENSE) — do whatever you want with this code.
+[Unlicense](LICENSE).
