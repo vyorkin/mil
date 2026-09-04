@@ -32,6 +32,7 @@ Mil/SetsAndFunctions/A_4_1.lean, A_4_2.lean
 Naming: `A_<chapter>_<section>.lean`, matching the book's numbering (e.g. `A_4_1.lean` is book section 4.1). Each chapter has one aggregator file (`Mil/<Chapter>.lean`) that just imports all of that chapter's section files, and `Mil.lean` imports each chapter aggregator.
 
 **When adding a new section file**, wire it into both levels:
+
 1. Add `import Mil.<Chapter>.A_<ch>_<sec>` to `Mil/<Chapter>.lean`.
 2. If it's a brand-new chapter, create `Mil/<Chapter>.lean` and add `import Mil.<Chapter>` to `Mil.lean`.
 
@@ -41,4 +42,3 @@ Naming: `A_<chapter>_<section>.lean`, matching the book's numbering (e.g. `A_4_1
 - Exercises are often solved multiple times with different tactics/approaches, each as a separate `example`, with a short Russian comment above noting the approach (e.g. "Антисимметрия", "Прямое конструирование пруф-терма") and sometimes a self-critique of which approach is better.
 - Related examples/exercises are grouped in `namespace My1`, `My2`, ... blocks per file to avoid name clashes between independent proof attempts.
 - `#check` lines are used liberally as inline documentation of a lemma's signature (`#check mem_inter_iff -- (a b : Set α) : x ∈ a ∩ b ↔ x ∈ a ∧ x ∈ b`) right before it's used — keep this pattern when introducing a new Mathlib lemma.
-- Comments capture *why* a tactic/approach was chosen or what mistake was made, not what the code does — keep new comments in that spirit and in Russian, consistent with the existing notes.
